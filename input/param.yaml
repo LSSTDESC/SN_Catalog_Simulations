@@ -1,0 +1,25 @@
+ProductionID: 1
+SN parameters:
+   Id : 100                   # Id
+   X1: 0.0                    # stretch
+   Color : 0.0                # color
+   z : 0.2                    # redshift
+   t0: 65000.                 # Tmax (obs. frame)
+   min_rf_phase : -20.        # obs min phase (rest frame)
+   max_rf_phase : 60.         # obs max phase (rest frame)
+   absmag : -19.0906          # peak abs mag
+   band : besselB             # band for absmag
+   magsys : vega              # magsys for absmag
+Cosmology:
+   Model: FlatLambdaCDM       # Cosmological model
+   Omega_m : 0.30             # Omega_m
+   H0 : 72.0                  # H0
+   w0 : -1.0                  # w0
+   wa : 0.0                   # wa
+Instrument: LSST               
+Observations: 
+   filename: fich.txt         # Name of obs file
+   dirname : inputs           # dir of obs file
+Simulator: SN_Cosmo            # Simulator name: SN_Cosmo,SN_Sim,SN_Ana
+Host Parameters: None         # Host parameters
+     

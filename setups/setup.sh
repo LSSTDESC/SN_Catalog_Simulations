@@ -1,0 +1,5 @@
+#!/bin/bash
+
+export PYTHONPATH=Sim_SNCosmo:$PYTHONPATH
+export PYTHONPATH=Sim_SNSim/:$PYTHONPATH
+export PYTHONPATH=Sim_SNAna/:$PYTHONPATH
