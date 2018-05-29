@@ -1,8 +1,5 @@
 import yaml
 import argparse
-#from SN_Cosmo import SN_Cosmo
-#from SN_Sim import SN_Sim
-#from SN_Ana import SN_Ana
 from Telescope import Telescope
 from astropy.cosmology import w0waCDM
 from params import Parameter
@@ -15,13 +12,7 @@ def run(config_filename):
     # YAML input file.
     config = yaml.load(open(config_filename))
     print(config)
-    """
-    print(config['SN parameters']['c'])
-    if config['SN parameters']['c'] == 'random':
-        print('yes')
-    """
-    #exec(config['Simulator']+'('+config['Simulator']+','+str(config['SN parameters'])+','+str(config['Cosmology'])+')')
-
+   
     # load cosmology
     cosmo_par=config['Cosmology']
     cosmology=w0waCDM(H0=cosmo_par['H0'],Om0=cosmo_par['Omega_m'],Ode0=cosmo_par['Omega_l'],w0=cosmo_par['w0'],wa=cosmo_par['wa']) 
@@ -35,19 +26,11 @@ def run(config_filename):
     param=Parameter(config['Simulator'],config['SN parameters'],cosmology,telescope)
     print('booo',param.name)
     
-    simu_name=config['Simulator']
+    simu_name=config['Simulator']['name']
     module = import_module(simu_name)
-    simu=module.SN(param)
-    simu()
-    """
-    func = getattr(module, param)
-    func()
-    """
-    """
-    cmd=config['Simulator']+'('+str(param)+')'
-    print(cmd)
-    exec(config['Simulator']+'('+str(param)+')')
-    """
+    simu=module.SN(param,config['Simulator'])
+    simu('')
+    
 def main(args):
     print('running')
     run(args.config_filename)
