@@ -11,15 +11,22 @@ SN parameters:
    band : besselB             # band for absmag
    magsys : vega              # magsys for absmag
 Cosmology:
-   Model: FlatLambdaCDM       # Cosmological model
+   Model : w0waCDM      # Cosmological model
    Omega_m : 0.30             # Omega_m
+   Omega_l : 0.70             # Omega_l
    H0 : 72.0                  # H0
    w0 : -1.0                  # w0
    wa : 0.0                   # wa
-Instrument: LSST               
+Instrument:
+   name : LSST
+   throughput_dir : LSST_THROUGHPUTS_BASELINE
+   atmos_dir : THROUGHPUTS_DIR
+   airmass : 1.1
+   atmos : True
+   aerosol : False
 Observations: 
    filename: fich.txt         # Name of obs file
    dirname : inputs           # dir of obs file
-Simulator: SN_Cosmo            # Simulator name: SN_Cosmo,SN_Sim,SN_Ana
+Simulator: SN_Cosmo           # Simulator name: SN_Cosmo,SN_Sim,SN_Ana
 Host Parameters: None         # Host parameters
      
