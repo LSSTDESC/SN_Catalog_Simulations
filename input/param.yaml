@@ -4,7 +4,7 @@ SN parameters:
    X1: 0.0                    # stretch
    Color : 0.0                # color
    z : 0.2                    # redshift
-   DayMax: 65000.                 # Tmax (obs. frame)
+   DayMax: 62750.                 # Tmax (obs. frame)
    min_rf_phase : -20.        # obs min phase (rest frame)
    max_rf_phase : 60.         # obs max phase (rest frame)
    absmag : -19.0906          # peak abs mag
@@ -25,8 +25,8 @@ Instrument:
    atmos : True  #atmos
    aerosol : False  #aerosol
 Observations: 
-   filename: fich.txt         # Name of obs file
-   dirname : inputs           # dir of obs file
+   filename: Observations_DD_100.txt    # Name of obs file
+   dirname : input          # dir of obs file
    season : 0    #season of observations (start at 0)
 Simulator :
     name : SN_Cosmo           # Simulator name: SN_Cosmo,SN_Sim,SN_Ana

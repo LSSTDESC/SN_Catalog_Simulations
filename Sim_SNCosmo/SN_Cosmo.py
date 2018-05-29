@@ -22,7 +22,7 @@ class SN(Parameter):
             wave_min=model_min
             wave_max=model_max
 
-        wave= np.arange(wave_min,wave_max,1.)
+        self.wave= np.arange(wave_min,wave_max,1.)
         
         source=sncosmo.get_source(model,version=version)
 
@@ -40,13 +40,26 @@ class SN(Parameter):
         self.SN.set_source_peakabsmag(self.sn_parameters['absmag'], self.sn_parameters['band'], self.sn_parameters['magsys'])
 
     def __call__(self,obs):
-        print('in call',self.name)
+        print('in call',self.name,len(obs))
 
-    def cutoff(self,obs):
+        obs=self.cutoff(obs,self.sn_parameters['DayMax'],self.sn_parameters['z'],self.sn_parameters['min_rf_phase'],self.sn_parameters['max_rf_phase'])
+        print('after cut ',self.name,len(obs))
+        fluxes=10.*self.SN.flux(obs['mjd'],self.wave)
+        
+        wavelength=self.wave/10.
+        
+        wavelength=np.repeat(wavelength[np.newaxis,:], len(fluxes), 0)
+        #SED_time = Sed(wavelen=wavelength, flambda=fluxes)
+
+    def cutoff(self,obs,T0,z,min_rf_phase,max_rf_phase):
         blue_cutoff=300.
         red_cutoff=800.
-        mean_restframe_wavelength = np.asarray([telescope.throughputs.mean_wavelength[obser['band'][-1]]/ (1. + z) for obser in obs])
+        print('akakakakaka',len(obs))
+        for obser in obs:
+            print('ererrr',obser['band'][-1])
+        mean_restframe_wavelength = np.asarray([self.telescope.mean_wavelength[obser['band'][-1]]/ (1. + z) for obser in obs])
 
         p=(obs['mjd']-T0)/(1.+z)
+        print('hello phase',p,T0,z,obs['mjd'],mean_restframe_wavelength)
         idx = (p >= min_rf_phase)&(p<=max_rf_phase)&(mean_restframe_wavelength>blue_cutoff) & (mean_restframe_wavelength<red_cutoff)
         return obs[idx]

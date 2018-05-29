@@ -4,7 +4,8 @@ from Telescope import Telescope
 from astropy.cosmology import w0waCDM
 from params import Parameter
 from importlib import import_module
-
+from Observations import Observations
+import numpy as np
 parser = argparse.ArgumentParser(description='Run a SN simulation from a configuration file')
 parser.add_argument('config_filename', help='Configuration file in YAML format.')
 
@@ -25,11 +26,20 @@ def run(config_filename):
     # load all parameters
     param=Parameter(config['Simulator'],config['SN parameters'],cosmology,telescope)
     print('booo',param.name)
+
+    # load Observations
+
+    obs_file=config['Observations']['dirname']+'/'+config['Observations']['filename']
+    obs=Observations(filename=obs_file).seasons[config['Observations']['season']]
+    print('observbations',obs,obs_file)
     
-    simu_name=config['Simulator']['name']
-    module = import_module(simu_name)
-    simu=module.SN(param,config['Simulator'])
-    simu('')
+    for simu_name in [config['Simulator']['name']]:
+        module = import_module(simu_name)
+        simu=module.SN(param,config['Simulator'])
+        # simulation
+        #remove the u band
+        idx =np.where(obs['band'][-1] != 'u')
+        simu(obs[idx])
     
 def main(args):
     print('running')
