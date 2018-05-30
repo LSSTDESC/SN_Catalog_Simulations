@@ -13,3 +13,5 @@ To run the simulation:
 - cd ../SN_Catalog_Simulations
 - source setups/setup.sh
 - python SN_Simulation/sn_simulation.py input/param.yaml
+
+N.B: This software needs lsst_sim. It is currently running @NERSC with w.2018.19_sim2.8.0.
