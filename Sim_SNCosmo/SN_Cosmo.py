@@ -56,37 +56,22 @@ class SN(Parameter):
 
         fluxes=[]
         transes=[]
-        seds=[Sed(wavelen=SED_time.wavelen[i],flambda=SED_time.flambda[i]) for i in range(len(SED_time.wavelen))]
-        transes=[self.telescope.atmosphere[obs['band'][i][-1]] for i in range(len(SED_time.wavelen))]
-        fluxes=[seds[i].calcFlux(bandpass=transes[i]) for i in range(len(SED_time.wavelen))]
-        
+        nvals=range(len(SED_time.wavelen))
+        seds=[Sed(wavelen=SED_time.wavelen[i],flambda=SED_time.flambda[i]) for i in nvals]
+        transes=[self.telescope.atmosphere[obs['band'][i][-1]] for i in nvals]
+        fluxes=np.asarray([seds[i].calcFlux(bandpass=transes[i]) for i in nvals])
+        photParams=[PhotometricParameters(nexp=obs['exptime'][i]/15.) for i in nvals]
+        mag_SN=-2.5 * np.log10(fluxes / 3631.0)  #fluxes are in Jy
+        calc=[SignalToNoise.calcSNR_m5(mag_SN[i],transes[i],obs['m5sigmadepth'][i],photParams[i]) for i in nvals]
+        snr_m5_opsim=[calc[i][0] for i in nvals]
+        #gamma_opsim=[calc[i][1] for i in nvals]
+        e_per_sec = [seds[i].calcADU(bandpass=transes[i], photParams=photParams[i])/obs['exptime'][i]*photParams[i].gain for i in nvals]
         table_obs=Table(obs)
-        snr_m5=[]
-        e_per_sec_list=[]
-        for i in range(len(SED_time.wavelen)):
-            photParams=PhotometricParameters(nexp=table_obs['exptime'][i]/15.)
-            flux_SN=fluxes[i]
-            if flux_SN > 0:
-                trans=self.telescope.atmosphere[table_obs['band'][i][-1]]
-                mag_SN=-2.5 * np.log10(flux_SN / 3631.0)  
-                snr_m5_opsim,gamma_opsim=SignalToNoise.calcSNR_m5(mag_SN,trans,table_obs['m5sigmadepth'][i],photParams)
-                err_flux_SN=flux_SN/snr_m5_opsim
-                e_per_sec = seds[i].calcADU(bandpass=trans, photParams=photParams) #number of ADU counts for expTime
-                e_per_sec/=table_obs['exptime'][i]/photParams.gain
-                snr_m5.append(snr_m5_opsim)
-                e_per_sec_list.append(e_per_sec)
-            else:
-                snr_m5.append(1)
-                e_per_sec_list.append(1)
-
-        #print('passed')
-        
         table_obs.add_column(Column(fluxes, name='flux'))
-        table_obs.add_column(Column(snr_m5, name='snr_m5'))
-        table_obs.add_column(Column(e_per_sec_list, name='flux_e'))
+        table_obs.add_column(Column(snr_m5_opsim, name='snr_m5'))
+        table_obs.add_column(Column(e_per_sec, name='flux_e'))
         idx = table_obs['flux'] >= 0.
         table_obs=table_obs[idx]
-
         print(table_obs)
         
     def cutoff(self,obs,T0,z,min_rf_phase,max_rf_phase):
