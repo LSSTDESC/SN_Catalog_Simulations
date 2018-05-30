@@ -38,7 +38,7 @@ def run(config_filename):
         simu=module.SN(param,config['Simulator'])
         # simulation
         #remove the u band
-        idx =np.where(obs['band'][-1] != 'u')
+        idx = [i for i,val in enumerate(obs['band']) if val[-1]!= 'u']
         simu(obs[idx])
     
 def main(args):
