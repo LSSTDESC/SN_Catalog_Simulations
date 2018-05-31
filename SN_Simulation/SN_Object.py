@@ -1,6 +1,7 @@
 from Telescope import Telescope
+import numpy as np
 
-class Parameter:
+class SN_Object:
     def __init__(self, name, sn_parameters, cosmology, Telescope):
         print('there we go',name)
         self._name=name
@@ -23,3 +24,14 @@ class Parameter:
     @property
     def telescope(self):
         return self._telescope
+
+    def cutoff(self,obs,T0,z,min_rf_phase,max_rf_phase):
+        blue_cutoff=300.
+        red_cutoff=800.
+        
+        mean_restframe_wavelength = np.asarray([self.telescope.mean_wavelength[obser['band'][-1]]/ (1. + z) for obser in obs])
+
+        p=(obs['mjd']-T0)/(1.+z)
+        
+        idx = (p >= min_rf_phase)&(p<=max_rf_phase)&(mean_restframe_wavelength>blue_cutoff) & (mean_restframe_wavelength<red_cutoff)
+        return obs[idx]

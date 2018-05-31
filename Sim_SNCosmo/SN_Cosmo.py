@@ -1,12 +1,12 @@
 import sncosmo
-from params import Parameter
+from SN_Object import SN_Object
 import numpy as np
 from lsst.sims.photUtils import Bandpass,Sed
 from lsst.sims.photUtils import SignalToNoise
 from lsst.sims.photUtils import PhotometricParameters
 from astropy.table import vstack,Table,Column
 
-class SN(Parameter):
+class SN(SN_Object):
     def __init__(self,param,simu_param):
         super().__init__(param.name,param.sn_parameters,param.cosmology,param.telescope)
     
@@ -74,13 +74,4 @@ class SN(Parameter):
         table_obs=table_obs[idx]
         print(table_obs)
         
-    def cutoff(self,obs,T0,z,min_rf_phase,max_rf_phase):
-        blue_cutoff=300.
-        red_cutoff=800.
-        
-        mean_restframe_wavelength = np.asarray([self.telescope.mean_wavelength[obser['band'][-1]]/ (1. + z) for obser in obs])
-
-        p=(obs['mjd']-T0)/(1.+z)
-        
-        idx = (p >= min_rf_phase)&(p<=max_rf_phase)&(mean_restframe_wavelength>blue_cutoff) & (mean_restframe_wavelength<red_cutoff)
-        return obs[idx]
+   
