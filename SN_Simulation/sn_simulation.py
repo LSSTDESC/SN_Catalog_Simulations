@@ -2,7 +2,7 @@ import yaml
 import argparse
 from Telescope import Telescope
 from astropy.cosmology import w0waCDM
-from params import Parameter
+from SN_Object import SN_Object
 from importlib import import_module
 from Observations import Observations
 import numpy as np
@@ -24,8 +24,8 @@ def run(config_filename):
     print(telescope.m5('ugrizy'))
 
     # load all parameters
-    param=Parameter(config['Simulator'],config['SN parameters'],cosmology,telescope)
-    print('booo',param.name)
+    sn_object=SN_Object(config['Simulator'],config['SN parameters'],cosmology,telescope)
+    print('booo',sn_object.name)
 
     # load Observations
 
@@ -35,7 +35,7 @@ def run(config_filename):
     
     for simu_name in [config['Simulator']['name']]:
         module = import_module(simu_name)
-        simu=module.SN(param,config['Simulator'])
+        simu=module.SN(sn_object,config['Simulator'])
         # simulation
         #remove the u band
         idx = [i for i,val in enumerate(obs['band']) if val[-1]!= 'u']
