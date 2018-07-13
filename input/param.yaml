@@ -1,15 +1,27 @@
 ProductionID: 1
 SN parameters:
    Id : 100                   # Id
-   X1: 0.0                    # stretch
-   Color : 0.0                # color
-   z : 0.2                    # redshift
-   DayMax: 59800.                 # Tmax (obs. frame)
+   X1_Color:                    # stretch and color
+       type : random
+       min : [-2.0,-0.2]
+       max : [2.0,0.2]
+       rate :  JLA
+   z :              # redshift
+       type : random
+       min : 0.01
+       max : 1.2
+       rate : Perrett # Type Ia volumetric rate : Perrett, Ripoche, Dilday.
+   DayMax:                 # Tmax (obs. frame)
+       type : random
+       min : 0
+       max : 999
+       rate : Uniform
    min_rf_phase : -20.        # obs min phase (rest frame)
    max_rf_phase : 60.         # obs max phase (rest frame)
    absmag : -19.0906          # peak abs mag
    band : bessellB             # band for absmag
    magsys : vega              # magsys for absmag
+   survey area : 9.6        # field area (in deg2)
 Cosmology:
    Model : w0waCDM      # Cosmological model
    Omega_m : 0.30             # Omega_m

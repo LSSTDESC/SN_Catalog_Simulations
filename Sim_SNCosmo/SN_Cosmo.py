@@ -12,7 +12,7 @@ class SN(SN_Object):
     
         model=simu_param['model']
         version=str(simu_param['version'])
-        print('alors',model,version)
+        #print('alors',model,version)
 
         if model == 'salt2-extended':
             model_min=300.

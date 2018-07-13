@@ -3,7 +3,7 @@ import numpy as np
 
 class SN_Object:
     def __init__(self, name, sn_parameters, cosmology, Telescope):
-        print('there we go',name)
+        #print('there we go',name)
         self._name=name
         self._sn_parameters=sn_parameters
         self._cosmology=cosmology
