@@ -1,6 +1,6 @@
 import yaml
 import argparse
-from Telescope import Telescope
+from SN_Telescope import Telescope
 from astropy.cosmology import w0waCDM
 from SN_Object import SN_Object
 from importlib import import_module

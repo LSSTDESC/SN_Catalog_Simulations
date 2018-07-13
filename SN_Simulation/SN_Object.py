@@ -1,4 +1,4 @@
-from Telescope import Telescope
+from SN_Telescope import Telescope
 import numpy as np
 
 class SN_Object:
