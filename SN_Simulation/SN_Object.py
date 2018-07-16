@@ -2,12 +2,13 @@ from SN_Telescope import Telescope
 import numpy as np
 
 class SN_Object:
-    def __init__(self, name, sn_parameters, cosmology, Telescope):
+    def __init__(self, name, sn_parameters, cosmology, Telescope,snid):
         #print('there we go',name)
         self._name=name
         self._sn_parameters=sn_parameters
         self._cosmology=cosmology
         self._telescope=Telescope
+        self._SNID=snid
 
     @property
     def name(self):
@@ -25,6 +26,10 @@ class SN_Object:
     def telescope(self):
         return self._telescope
 
+    @property
+    def SNID(self):
+        return self._SNID
+    
     def cutoff(self,obs,T0,z,min_rf_phase,max_rf_phase):
         blue_cutoff=300.
         red_cutoff=800.

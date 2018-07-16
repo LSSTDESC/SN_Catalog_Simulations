@@ -11,7 +11,7 @@ import pylab as plt
 
 class SN(SN_Object):
     def __init__(self,param,simu_param):
-        super().__init__(param.name,param.sn_parameters,param.cosmology,param.telescope)
+        super().__init__(param.name,param.sn_parameters,param.cosmology,param.telescope,param.SNID)
     
         model=simu_param['model']
         version=str(simu_param['version'])
@@ -49,7 +49,8 @@ class SN(SN_Object):
         self.X0=self.SN.get('x0')
 
     def __call__(self,obs,display=False):
-       
+
+        print('Simulating SNID',self.SNID)
         obs=self.cutoff(obs,self.sn_parameters['DayMax'],self.sn_parameters['z'],self.sn_parameters['min_rf_phase'],self.sn_parameters['max_rf_phase'])
         
         fluxes=10.*self.SN.flux(obs['mjd'],self.wave)

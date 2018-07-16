@@ -11,3 +11,18 @@ export PYTHONPATH=Sim_SNSim:$PYTHONPATH
 export PYTHONPATH=Sim_SNAna:$PYTHONPATH
 
 export PYTHONPATH=../SN_Utils/Utils:$PYTHONPATH
+
+#checking whether hdf5 is accessible localy or not
+lib='h5py'
+thedir='../lib/*/site-packages/'
+echo $thedir
+if [ -d ${thedir}$lib ]
+then
+    echo $lib 'already installed -> updating PYTHONPATH'
+else
+    echo $lib 'not installed -> installing with pip'
+    pip install --prefix=../ ${lib}
+    thedir='../lib/*/site-packages/'
+fi
+final_dir=`echo $thedir`
+export PYTHONPATH=${final_dir}:$PYTHONPATH

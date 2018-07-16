@@ -24,7 +24,7 @@ def run(config_filename):
     #load telescope
     tel_par=config['Instrument']
     telescope=Telescope(name=tel_par['name'],throughput_dir=tel_par['throughput_dir'],atmos_dir=tel_par['atmos_dir'],atmos=tel_par['atmos'],aerosol=tel_par['aerosol'],airmass=tel_par['airmass'])
-    print(telescope.m5('ugrizy'))
+    #print(telescope.m5('ugrizy'))
 
      # load Observations
 
@@ -43,11 +43,11 @@ def run(config_filename):
     
 
     # load all parameters
-    for val in gen_params[:20]:
+    for i,val in enumerate(gen_params[:20]):
         sn_par=sn_parameters
         for name in ['z','X1','Color','DayMax']:
             sn_par[name]=val[name]
-        sn_object=SN_Object(config['Simulator'],sn_par,cosmology,telescope)
+        sn_object=SN_Object(config['Simulator'],sn_par,cosmology,telescope,sn_parameters['Id']+i)
 
         for simu_name in [config['Simulator']['name']]:
             module = import_module(simu_name)
