@@ -43,7 +43,7 @@ def run(config_filename):
     
 
     # load all parameters
-    for val in gen_params:
+    for val in gen_params[:20]:
         sn_par=sn_parameters
         for name in ['z','X1','Color','DayMax']:
             sn_par[name]=val[name]
@@ -54,7 +54,7 @@ def run(config_filename):
             simu=module.SN(sn_object,config['Simulator'])
             # simulation
             #remove the u band
-            simu(obs)
+            simu(obs,config['Display'])
     
 def main(args):
     print('running')

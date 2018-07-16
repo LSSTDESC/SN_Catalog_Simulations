@@ -5,6 +5,9 @@ from lsst.sims.photUtils import Bandpass,Sed
 from lsst.sims.photUtils import SignalToNoise
 from lsst.sims.photUtils import PhotometricParameters
 from astropy.table import vstack,Table,Column
+import astropy.units as u
+import matplotlib.animation as manimation
+import pylab as plt
 
 class SN(SN_Object):
     def __init__(self,param,simu_param):
@@ -43,7 +46,9 @@ class SN(SN_Object):
 
         self.SN.set_source_peakabsmag(self.sn_parameters['absmag'], self.sn_parameters['band'], self.sn_parameters['magsys'])
 
-    def __call__(self,obs):
+        self.X0=self.SN.get('x0')
+
+    def __call__(self,obs,display=False):
        
         obs=self.cutoff(obs,self.sn_parameters['DayMax'],self.sn_parameters['z'],self.sn_parameters['min_rf_phase'],self.sn_parameters['max_rf_phase'])
         
@@ -67,11 +72,35 @@ class SN(SN_Object):
         #gamma_opsim=[calc[i][1] for i in nvals]
         e_per_sec = [seds[i].calcADU(bandpass=transes[i], photParams=photParams[i])/obs['exptime'][i]*photParams[i].gain for i in nvals]
         table_obs=Table(obs)
+        table_obs.remove_column('band')
         table_obs.add_column(Column(fluxes, name='flux'))
+        table_obs.add_column(Column(fluxes/snr_m5_opsim, name='fluxerr'))
         table_obs.add_column(Column(snr_m5_opsim, name='snr_m5'))
         table_obs.add_column(Column(e_per_sec, name='flux_e'))
+        table_obs.add_column(Column(['LSST::'+obs['band'][i][-1] for i in range(len(obs['band']))], name='band'))
+        #table_obs.add_column(Column([obs['band'][i][-1] for i in range(len(obs['band']))], name='band'))
+        table_obs.add_column(Column([2.5*np.log10(3631)]*len(obs),name='zp'))
+        table_obs.add_column(Column(['ab']*len(obs),name='zpsys'))
+        table_obs.add_column(Column(obs['mjd'],name='time'))
+        
         idx = table_obs['flux'] >= 0.
         table_obs=table_obs[idx]
-        print(table_obs)
-        
-   
+        #print(table_obs.colnames)
+        if display:
+            self.Plot_LC(table_obs['time','band','flux','fluxerr','zp','zpsys'])
+
+    def Plot_LC(self,table):
+        import pylab as plt
+        for band in 'ugrizy':                                                                                                            
+            if self.telescope.airmass > 0:                                                                                                      
+                bandpass=sncosmo.Bandpass(self.telescope.atmosphere[band].wavelen,self.telescope.atmosphere[band].sb, name='LSST::'+band,wave_unit=u.nm)                                                                                                                       
+            else:                                                                                                                          
+                bandpass=sncosmo.Bandpass(self.telescope.system[band].wavelen,self.telescope.system[band].sb, name='LSST::'+band,wave_unit=u.nm)                                                                                                                               
+            sncosmo.registry.register(bandpass, force=True)
+            
+        model = sncosmo.Model('salt2')
+        model.set(z=self.sn_parameters['z'], c=self.sn_parameters['Color'], t0=self.sn_parameters['DayMax'], x0=self.X0,x1=self.sn_parameters['X1'])
+        sncosmo.plot_lc(data=table, model=model)
+        plt.draw()
+        plt.pause(0.5)
+        plt.close()
