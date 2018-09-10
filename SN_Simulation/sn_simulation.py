@@ -62,7 +62,7 @@ def run(config_filename):
     #load SN_parameters and make a table of SN to simulate...
     # This simulation table is obs dependent because of DayMax choice
     sn_parameters=config['SN parameters']
-
+    sn_meta=[]
     for season in range(len(all_obs.seasons)):
         if season != season_obs and season_obs!=-1 :
             continue
@@ -70,17 +70,19 @@ def run(config_filename):
         #remove the u band
         idx = [i for i,val in enumerate(obs['band']) if val[-1]!= 'u']
         obs=obs[idx]
+        print('obs',sn_parameters)
         gen=Generate_Sample(sn_parameters,cosmo_par)
         gen_params=gen(obs)
         #gen.Plot_Parameters(gen_params)
     
         # load all parameters
-        sn_meta=[]
+       
         for i,val in enumerate(gen_params[:]):
-            sn_par=sn_parameters
+            index_hdf5=i+10000*season
+            sn_par=sn_parameters.copy()
             for name in ['z','X1','Color','DayMax']:
                 sn_par[name]=val[name]
-            SNID=sn_parameters['Id']+i
+            SNID=sn_par['Id']+index_hdf5
             sn_object=SN_Object(config['Simulator'],sn_par,cosmology,telescope,SNID)
 
             for simu_name in [config['Simulator']['name']]:
@@ -88,13 +90,16 @@ def run(config_filename):
                 simu=module.SN(sn_object,config['Simulator'])
                 # simulation
                 obs_table=simu(obs,config['Display'])
-                #write this table in the lc_out
-                obs_table.write(lc_out, path='lc_'+str(i), append=True,compression=True)
-                # append the parameters in tab_out
-                m_lc=obs_table.meta
-                sn_meta.append((m_lc['SNID'],m_lc['Ra'],m_lc['Dec'],m_lc['DayMax'],m_lc['X1'],m_lc['Color'],m_lc['z'],i))
-        Table(rows=sn_meta,names=['SNID','Ra','Dec','DayMax','X1','Color','z','id_hdf5'],dtype=('i4', 'f8', 'f8', 'f8', 'f8' ,'f8', 'f8','i4')).write(simu_out,'summary',compression=True)
-        print(sn_meta)
+                if save_status:
+                    #write this table in the lc_out
+                    
+                    obs_table.write(lc_out, path='lc_'+str(index_hdf5), append=True,compression=True)
+                    # append the parameters in tab_out
+                    m_lc=obs_table.meta
+                    sn_meta.append((m_lc['SNID'],m_lc['Ra'],m_lc['Dec'],m_lc['DayMax'],m_lc['X1'],m_lc['Color'],m_lc['z'],index_hdf5,season))
+
+    if len(sn_meta) > 0:
+        Table(rows=sn_meta,names=['SNID','Ra','Dec','DayMax','X1','Color','z','id_hdf5',season],dtype=('i4', 'f8', 'f8', 'f8', 'f8' ,'f8', 'f8','i4','i4')).write(simu_out,'summary',compression=True)
                 
 def main(args):
     print('running')

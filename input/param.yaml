@@ -39,7 +39,7 @@ Instrument:
 Observations: 
    filename: Observations_DD_100.txt    # Name of obs file
    dirname : input          # dir of obs file
-   season : 0    #season of observations (start at 0)/-1 : all seasons
+   season : -1    #season of observations (start at 0)/-1 : all seasons
    fieldname: DD
    fieldid: 100
 Simulator :
