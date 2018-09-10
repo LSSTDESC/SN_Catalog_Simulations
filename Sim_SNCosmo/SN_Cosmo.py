@@ -10,6 +10,17 @@ import matplotlib.animation as manimation
 import pylab as plt
 
 class SN(SN_Object):
+    """ SN class - inherits from SN_Object
+          Input parameters (as given in the input yaml file): 
+          - SN parameters (X1, Color, DayMax, z, ...)
+          - simulation parameters 
+
+         Output: 
+         - astropy table with the simulated light curve:
+               - columns : band, flux, fluxerr, snr_m5,flux_e,zp,zpsys,time
+               - metadata : SNID,Ra,Dec,DayMax,X1,Color,z
+
+    """
     def __init__(self,param,simu_param):
         super().__init__(param.name,param.sn_parameters,param.cosmology,param.telescope,param.SNID)
     
@@ -49,7 +60,13 @@ class SN(SN_Object):
         self.X0=self.SN.get('x0')
 
     def __call__(self,obs,display=False):
-
+        """ Simulation of the light curve
+              Input : a set of observations
+              Output : astropy table with:
+                            columns: band, flux, fluxerr, snr_m5,flux_e,zp,zpsys,time
+                            metadata : SNID,Ra,Dec,DayMax,X1,Color,z
+       """
+        
         print('Simulating SNID',self.SNID)
         obs=self.cutoff(obs,self.sn_parameters['DayMax'],self.sn_parameters['z'],self.sn_parameters['min_rf_phase'],self.sn_parameters['max_rf_phase'])
         
@@ -72,26 +89,32 @@ class SN(SN_Object):
         snr_m5_opsim=[calc[i][0] for i in nvals]
         #gamma_opsim=[calc[i][1] for i in nvals]
         e_per_sec = [seds[i].calcADU(bandpass=transes[i], photParams=photParams[i])/obs['exptime'][i]*photParams[i].gain for i in nvals]
-        table_obs=Table(obs)
-        table_obs.remove_column('band')
+        #table_obs=Table(obs)
+        table_obs=Table()
+        #table_obs.remove_column('band')
         table_obs.add_column(Column(fluxes, name='flux'))
         table_obs.add_column(Column(fluxes/snr_m5_opsim, name='fluxerr'))
         table_obs.add_column(Column(snr_m5_opsim, name='snr_m5'))
         table_obs.add_column(Column(e_per_sec, name='flux_e'))
-        table_obs.add_column(Column(['LSST::'+obs['band'][i][-1] for i in range(len(obs['band']))], name='band'))
+        table_obs.add_column(Column([np.string_('LSST::'+obs['band'][i][-1]) for i in range(len(obs['band']))], name='band'))
         #table_obs.add_column(Column([obs['band'][i][-1] for i in range(len(obs['band']))], name='band'))
         table_obs.add_column(Column([2.5*np.log10(3631)]*len(obs),name='zp'))
-        table_obs.add_column(Column(['ab']*len(obs),name='zpsys'))
+        table_obs.add_column(Column([np.string_('ab')]*len(obs),name='zpsys'))
         table_obs.add_column(Column(obs['mjd'],name='time'))
         
         idx = table_obs['flux'] >= 0.
         table_obs=table_obs[idx]
+        ra=np.asscalar(np.unique(obs['Ra']))
+        dec=np.asscalar(np.unique(obs['Dec']))
+        table_obs.meta=dict(zip(['SNID','Ra','Dec','DayMax','X1','Color','z'],[self.SNID,ra,dec,self.sn_parameters['DayMax'],self.sn_parameters['X1'],self.sn_parameters['Color'],self.sn_parameters['z']]))
         #print(table_obs.colnames)
         if display:
             self.Plot_LC(table_obs['time','band','flux','fluxerr','zp','zpsys'])
 
+        return table_obs
     def Plot_LC(self,table):
         import pylab as plt
+        print('What to plot',table)
         for band in 'ugrizy':                                                                                                            
             if self.telescope.airmass > 0:                                                                                                      
                 bandpass=sncosmo.Bandpass(self.telescope.atmosphere[band].wavelen,self.telescope.atmosphere[band].sb, name='LSST::'+band,wave_unit=u.nm)                                                                                                                       
@@ -103,5 +126,5 @@ class SN(SN_Object):
         model.set(z=self.sn_parameters['z'], c=self.sn_parameters['Color'], t0=self.sn_parameters['DayMax'], x0=self.X0,x1=self.sn_parameters['X1'])
         sncosmo.plot_lc(data=table, model=model)
         plt.draw()
-        plt.pause(0.5)
+        plt.pause(1.)
         plt.close()

@@ -21,7 +21,7 @@ then
     echo $lib 'already installed -> updating PYTHONPATH'
 else
     echo $lib 'not installed -> installing with pip'
-    pip install --prefix=../ ${lib}
+    pip install --prefix=../ ${lib}==2.7.1
     thedir='../lib/*/site-packages/'
 fi
 final_dir=`echo $thedir`
