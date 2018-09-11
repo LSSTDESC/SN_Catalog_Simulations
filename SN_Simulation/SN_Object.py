@@ -9,7 +9,7 @@ class SN_Object:
         self._cosmology=cosmology
         self._telescope=Telescope
         self._SNID=snid
-
+        
     @property
     def name(self):
         return self._name
@@ -40,3 +40,5 @@ class SN_Object:
         
         idx = (p >= min_rf_phase)&(p<=max_rf_phase)&(mean_restframe_wavelength>blue_cutoff) & (mean_restframe_wavelength<red_cutoff)
         return obs[idx]
+    
+

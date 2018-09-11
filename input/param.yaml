@@ -39,7 +39,7 @@ Instrument:
 Observations: 
    filename: Observations_DD_100.txt    # Name of obs file
    dirname : input          # dir of obs file
-   season : -1    #season of observations (start at 0)/-1 : all seasons
+   season : 0    #season of observations (start at 0)/-1 : all seasons
    fieldname: DD
    fieldid: 100
 Simulator :
@@ -47,7 +47,7 @@ Simulator :
     model : salt2-extended   # spectra model
     version : 1.0                     #version
 Host Parameters: None         # Host parameters
-Display : False  #display during LC simulations
+Display : False #display during LC simulations
 Output:
     directory: Output_Simu
     save: True
