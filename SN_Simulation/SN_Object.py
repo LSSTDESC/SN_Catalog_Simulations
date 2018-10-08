@@ -35,7 +35,7 @@ class SN_Object:
     @property
     def SNID(self):
         return self._SNID
-
+    
     def cutoff(self, obs, T0, z, min_rf_phase, max_rf_phase):
         """ select observations depending on phases
         Input

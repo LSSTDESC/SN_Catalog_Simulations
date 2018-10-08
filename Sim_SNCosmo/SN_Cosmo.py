@@ -102,6 +102,7 @@ class SN(SN_Object):
                           self.sn_parameters['min_rf_phase'],
                           self.sn_parameters['max_rf_phase'])
 
+        obs.sort(order='mjd')
         fluxes = 10.*self.SN.flux(obs['mjd'], self.wave)
 
         wavelength = self.wave/10.
@@ -122,7 +123,7 @@ class SN(SN_Object):
             nexp=obs['exptime'][i]/15.) for i in nvals]
         mag_SN = -2.5 * np.log10(fluxes / 3631.0)  # fluxes are in Jy
         calc = [SignalToNoise.calcSNR_m5(
-            mag_SN[i], transes[i], obs['m5sigmadepth'][i],
+            mag_SN[i], transes[i], obs['fiveSigmaDepth'][i],
             photParams[i]) for i in nvals]
         snr_m5_opsim = [calc[i][0] for i in nvals]
         # gamma_opsim=[calc[i][1] for i in nvals]

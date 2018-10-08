@@ -1,4 +1,4 @@
-ProductionID: 1
+ProductionID: WFD_0
 SN parameters:
    Id : 100                   # Id of the first SN
    X1_Color:                    # stretch and color
@@ -9,7 +9,7 @@ SN parameters:
    z :              # redshift
        type : random
        min : 0.01
-       max : 1.2
+       max : 0.5
        rate : Perrett # Type Ia volumetric rate : Perrett, Ripoche, Dilday.
    DayMax:                 # Tmax (obs. frame)
        type : random
@@ -37,11 +37,8 @@ Instrument:
    atmos : True  #atmos
    aerosol : False  #aerosol
 Observations: 
-   filename: Observations_DD_100.txt    # Name of obs file
-   dirname : input          # dir of obs file
-   season : 0    #season of observations (start at 0)/-1 : all seasons
-   fieldname: DD
-   fieldid: 100
+   filename: WFD_0.npy   # Name of obs file
+   dirname : ../../Ana_Cadence_Healpix/OpSimLogs/colossus_2665       # dir of obs file
 Simulator :
     name : SN_Cosmo           # Simulator name: SN_Cosmo,SN_Sim,SN_Ana
     model : salt2-extended   # spectra model
