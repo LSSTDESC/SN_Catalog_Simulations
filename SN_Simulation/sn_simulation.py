@@ -115,7 +115,6 @@ class Simu_All:
             obs_table = simu(obs, self.display_lc)
             if self.save_status:
                 # write this table in the lc_out
-
                 obs_table.write(self.lc_out,
                                 path='lc_'+str(self.index_hdf5),
                                 append=True,
@@ -166,11 +165,11 @@ def run(config_filename):
 
     names = dict(zip(['band', 'mjd', 'rawSeeing', 'sky', 'exptime',
                       'moonPhase', 'Ra', 'Dec', 'Nexp', 'fiveSigmaDepth',
-                      'seeing', 'airmass', 'night', 'season'],
+                      'seeing', 'airmass', 'night', 'season','pixarea'],
                      ['band', 'mjd', 'seeingFwhm500', 'sky', 'exptime',
                       'moonPhase', 'Ra', 'Dec', 'numExposures',
                       'fiveSigmaDepth', 'seeingFwhmEff', 'airmass',
-                      'night', 'season']))
+                      'night', 'season','pixarea']))
 
     simu = Simu_All(cosmo_par, tel_par, sn_parameters,
                     save_status, outdir, prodid,
