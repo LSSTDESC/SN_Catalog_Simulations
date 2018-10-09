@@ -165,11 +165,13 @@ def run(config_filename):
 
     names = dict(zip(['band', 'mjd', 'rawSeeing', 'sky', 'exptime',
                       'moonPhase', 'Ra', 'Dec', 'Nexp', 'fiveSigmaDepth',
-                      'seeing', 'airmass', 'night', 'season', 'pixarea'],
+                      'seeing', 'airmass', 'night', 'season', 'pixarea',
+                      'pixRa', 'pixDec'],
                      ['band', 'mjd', 'seeingFwhm500', 'sky', 'exptime',
                       'moonPhase', 'Ra', 'Dec', 'numExposures',
                       'fiveSigmaDepth', 'seeingFwhmEff', 'airmass',
-                      'night', 'season', 'pixarea']))
+                      'night', 'season', 'pixarea',
+                     'pixRa', 'pixDec']))
 
     simu = Simu_All(cosmo_par, tel_par, sn_parameters,
                     save_status, outdir, prodid,

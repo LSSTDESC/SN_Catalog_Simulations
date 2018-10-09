@@ -12,7 +12,7 @@ import os
 from SN_Throughputs import Throughputs
 from scipy import interpolate, integrate
 import h5py
-
+from lsst.sims.catUtils.dust import EBV
 
 class SN(SN_Object):
     """ SN class - inherits from SN_Object
@@ -52,9 +52,12 @@ class SN(SN_Object):
 
         source = sncosmo.get_source(model, version=version)
 
-        dust = sncosmo.OD94Dust()
+        self.dustmap = sncosmo.OD94Dust()
 
-        self.SN = sncosmo.Model(source=source, effects=[dust, dust],
+        self.lsstmwebv = EBV.EBVbase()
+        
+        self.SN = sncosmo.Model(source=source,
+                                effects=[self.dustmap, self.dustmap],
                                 effect_names=['host', 'mw'],
                                 effect_frames=['rest', 'obs'])
 
@@ -103,6 +106,14 @@ class SN(SN_Object):
                           self.sn_parameters['max_rf_phase'])
 
         obs.sort(order='mjd')
+        ra = np.asscalar(np.unique(obs['pixRa']))
+        dec = np.asscalar(np.unique(obs['pixDec']))
+        # apply dust here since Ra, Dec is known                                                                           
+        ebvofMW = self.lsstmwebv.calculateEbv(                                                           
+            equatorialCoordinates=np.array(
+                [[ra], [dec]]))[0]
+        self.SN.set(mwebv = ebvofMW)
+        
         fluxes = 10.*self.SN.flux(obs['mjd'], self.wave)
 
         wavelength = self.wave/10.
@@ -152,8 +163,6 @@ class SN(SN_Object):
 
         idx = table_obs['flux'] >= 0.
         table_obs = table_obs[idx]
-        ra = np.asscalar(np.unique(obs['Ra']))
-        dec = np.asscalar(np.unique(obs['Dec']))
         table_obs.meta = dict(zip(['SNID', 'Ra', 'Dec',
                                    'DayMax', 'X1', 'Color', 'z'], [
             self.SNID, ra, dec, self.sn_parameters['DayMax'],
