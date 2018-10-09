@@ -96,7 +96,7 @@ class SN(SN_Object):
         metadata : SNID,Ra,Dec,DayMax,X1,Color,z
         """
 
-        print('Simulating SNID', self.SNID)
+        # print('Simulating SNID', self.SNID)
         obs = self.cutoff(obs, self.sn_parameters['DayMax'],
                           self.sn_parameters['z'],
                           self.sn_parameters['min_rf_phase'],

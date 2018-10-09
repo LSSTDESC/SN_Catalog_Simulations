@@ -165,11 +165,11 @@ def run(config_filename):
 
     names = dict(zip(['band', 'mjd', 'rawSeeing', 'sky', 'exptime',
                       'moonPhase', 'Ra', 'Dec', 'Nexp', 'fiveSigmaDepth',
-                      'seeing', 'airmass', 'night', 'season','pixarea'],
+                      'seeing', 'airmass', 'night', 'season', 'pixarea'],
                      ['band', 'mjd', 'seeingFwhm500', 'sky', 'exptime',
                       'moonPhase', 'Ra', 'Dec', 'numExposures',
                       'fiveSigmaDepth', 'seeingFwhmEff', 'airmass',
-                      'night', 'season','pixarea']))
+                      'night', 'season', 'pixarea']))
 
     simu = Simu_All(cosmo_par, tel_par, sn_parameters,
                     save_status, outdir, prodid,
@@ -185,12 +185,13 @@ def run(config_filename):
     print(input_data.dtype)
 
     toprocess = np.unique(input_data[['fieldname', 'fieldid']])
-    print('Number of simulations', len(toprocess))
+    print('Number of fields to simulate', len(toprocess))
     for (fieldname, fieldid) in toprocess:
         idx = (input_data['fieldname'] == fieldname) & (
             input_data['fieldid'] == fieldid)
+        print('Simulating',fieldname,fieldid)
         simu(input_data[idx])
-        break
+        
     simu.Finish()
 
 
