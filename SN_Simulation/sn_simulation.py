@@ -14,12 +14,34 @@ import h5py
 
 
 class Simu_All:
+    """ Main class for simulation
+    Input (init)
+    ---------
+    - cosmo_par: cosmology parameters
+    - tel_par: telescope parameters
+    - sn_parameters: SN parameters
+    - save_status: to save (True) or not (False)
+    generated quantities
+    - outdir: output directory
+    - prodid: production id
+    - simu_config: Simulator configuration
+    - display_lc: to display (True) or not (False)
+    the light curves during production
+    - names: names of some variable used
+
+    Returns
+    ---------
+    - call :
+    LC (hdf5)
+    - Finish:
+    Summary of production (hdf5)
+    """
 
     def __init__(self, cosmo_par, tel_par, sn_parameters,
                  save_status, outdir, prodid,
                  simu_config, display_lc, names):
 
-        self.cosmo_par = cosmo_par
+        # self.cosmo_par = cosmo_par
         self.sn_parameters = sn_parameters
         self.simu_config = simu_config
         self.display_lc = display_lc
@@ -51,9 +73,9 @@ class Simu_All:
         # given in the input yaml file)
         # One containing a summary of the simulation:
         # astropy table with (SNID,Ra,Dec,X1,Color,z) parameters
-        # -> name: Simu_fieldname_fieldid_season.hdf5
+        # -> name: Simu_prodid.hdf5
         # A second containing the Light curves (list of astropy tables)
-        # -> name : LC_fieldname_fieldid_season.hdf5
+        # -> name : LC_prodid.hdf5
         self.simu_out = outdir+'/Simu_'+prodid+'.hdf5'
         self.lc_out = outdir+'/LC_'+prodid+'.hdf5'
         self.sn_meta = []
@@ -107,7 +129,7 @@ class Simu_All:
 
     def Finish(self):
         if len(self.sn_meta) > 0:
-            Table(rows=sn_meta,
+            Table(rows=self.sn_meta,
                   names=['SNID', 'Ra', 'Dec', 'DayMax', 'X1',
                          'Color', 'z', 'id_hdf5', 'season'],
                   dtype=('i4', 'f8', 'f8', 'f8', 'f8', 'f8',
@@ -169,7 +191,7 @@ def run(config_filename):
         idx = (input_data['fieldname'] == fieldname) & (
             input_data['fieldid'] == fieldid)
         simu(input_data[idx])
-
+        break
     simu.Finish()
 
 
