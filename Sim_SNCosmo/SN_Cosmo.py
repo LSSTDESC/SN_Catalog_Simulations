@@ -108,10 +108,10 @@ class SN(SN_Object):
 
         # set metadata
         table_lc.meta = dict(zip(['SNID', 'Ra', 'Dec',
-                                  'DayMax', 'X1', 'Color', 'z'], [
+                                  'DayMax', 'X1', 'Color', 'z','survey_area'], [
                                       self.SNID, ra, dec, self.sn_parameters['DayMax'],
                                       self.sn_parameters['X1'], self.sn_parameters['Color'],
-                                      self.sn_parameters['z']]))
+                                      self.sn_parameters['z'],np.asscalar(np.unique(obs['pixarea']))]))
         
         # print('Simulating SNID', self.SNID)
         obs = self.cutoff(obs, self.sn_parameters['DayMax'],

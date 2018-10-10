@@ -101,6 +101,7 @@ class Simu_All:
     def Process_Season(self, obs, season):
 
         gen_params = self.gen_par(obs)
+        
         for i, val in enumerate(gen_params[:]):
             self.index_hdf5 += 1
             sn_par = self.sn_parameters.copy()
@@ -132,16 +133,17 @@ class Simu_All:
                                      m_lc['X1'], m_lc['Color'],
                                      m_lc['z'], self.index_hdf5, season,
                                      self.fieldname, self.fieldid,
-                                     n_lc_points))
+                                     n_lc_points,m_lc['survey_area']))
 
     def Finish(self):
         if len(self.sn_meta) > 0:
             Table(rows=self.sn_meta,
                   names=['SNID', 'Ra', 'Dec', 'DayMax', 'X1',
                          'Color', 'z', 'id_hdf5', 'season',
-                         'fieldname','fieldid','n_lc_points'],
+                         'fieldname','fieldid',
+                         'n_lc_points','survey_area'],
                   dtype=('i4', 'f8', 'f8', 'f8', 'f8', 'f8',
-                         'f8', 'i4', 'i4','S3','i8','i8')).write(
+                         'f8', 'i4', 'i4','S3','i8','i8','f8')).write(
                              self.simu_out, 'summary', compression=True)
 
 
