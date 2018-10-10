@@ -14,7 +14,7 @@ export PYTHONPATH=${PWD}/SN_Catalog_Simulations/Sim_SNAna:$PYTHONPATH
 
 export PYTHONPATH=${PWD}/SN_Utils/Utils:$PYTHONPATH
 export SN_UTILS_DIR=${PWD}/SN_Utils
-export SALT2_DIR= ${PWD}/SN_Utils/SALT2_Files
+export SALT2_DIR=${PWD}/SN_Utils/SALT2_Files
 
 #checking whether hdf5 is accessible localy or not
 lib='h5py'
