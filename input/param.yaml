@@ -37,7 +37,7 @@ Instrument:
    aerosol : False  #aerosol
 Observations: 
    filename: WFD_0.npy   # Name of obs file
-   dirname : ../../Ana_Cadence_Healpix/OpSimLogs/colossus_2665       # dir of obs file
+   dirname : ../Ana_Cadence_Healpix/OpSimLogs/colossus_2665       # dir of obs file
 Simulator :
     name : SN_Cosmo           # Simulator name: SN_Cosmo,SN_Sim,SN_Ana
     model : salt2-extended   # spectra model

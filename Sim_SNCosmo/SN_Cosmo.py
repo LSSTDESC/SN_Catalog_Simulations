@@ -217,7 +217,7 @@ class SN(SN_Object):
 
         name = 'STANDARD'
         band = 'B'
-        thedir = '../SN_Utils/SALT2_Files'
+        thedir = os.getenv('SALT2_DIR')
         # thedir='.'
 
         os.environ[name] = thedir+'/Instruments/Landolt'
