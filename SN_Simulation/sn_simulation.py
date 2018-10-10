@@ -86,14 +86,17 @@ class Simu_All:
         if os.path.exists(self.lc_out):
             os.remove(self.lc_out)
 
-    def __call__(self, tab):
+    def __call__(self, tab,fieldname,fieldid):
 
         all_obs = Observations(data=tab, names=self.names)
+        self.fieldname = fieldname
+        self.fieldid = fieldid
         for season in range(len(all_obs.seasons)):
             obs = all_obs.seasons[season]
             # remove the u band
             idx = [i for i, val in enumerate(obs['band']) if val[-1] != 'u']
-            self.Process_Season(obs[idx], season)
+            if len(obs[idx]) > 0:
+                self.Process_Season(obs[idx], season)
 
     def Process_Season(self, obs, season):
 
@@ -112,27 +115,33 @@ class Simu_All:
             module = import_module(self.simu_config['name'])
             simu = module.SN(sn_object, self.simu_config)
             # simulation
-            obs_table = simu(obs, self.display_lc)
+            lc_table = simu(obs, self.display_lc)
             if self.save_status:
                 # write this table in the lc_out
-                obs_table.write(self.lc_out,
-                                path='lc_'+str(self.index_hdf5),
-                                append=True,
-                                compression=True)
+                #print('writing',len(lc_table))
+                n_lc_points = len(lc_table)
+                if n_lc_points > 0:
+                    lc_table.write(self.lc_out,
+                                   path='lc_'+str(self.index_hdf5),
+                                   append=True,
+                                   compression=True)
                 # append the parameters in tab_out
-                m_lc = obs_table.meta
+                m_lc = lc_table.meta
                 self.sn_meta.append((m_lc['SNID'], m_lc['Ra'],
                                      m_lc['Dec'], m_lc['DayMax'],
                                      m_lc['X1'], m_lc['Color'],
-                                     m_lc['z'], self.index_hdf5, season))
+                                     m_lc['z'], self.index_hdf5, season,
+                                     self.fieldname, self.fieldid,
+                                     n_lc_points))
 
     def Finish(self):
         if len(self.sn_meta) > 0:
             Table(rows=self.sn_meta,
                   names=['SNID', 'Ra', 'Dec', 'DayMax', 'X1',
-                         'Color', 'z', 'id_hdf5', 'season'],
+                         'Color', 'z', 'id_hdf5', 'season',
+                         'fieldname','fieldid','n_lc_points'],
                   dtype=('i4', 'f8', 'f8', 'f8', 'f8', 'f8',
-                         'f8', 'i4', 'i4')).write(
+                         'f8', 'i4', 'i4','S3','i8','i8')).write(
                              self.simu_out, 'summary', compression=True)
 
 
@@ -192,7 +201,7 @@ def run(config_filename):
         idx = (input_data['fieldname'] == fieldname) & (
             input_data['fieldid'] == fieldid)
         print('Simulating',fieldname,fieldid)
-        simu(input_data[idx])
+        simu(input_data[idx],fieldname,fieldid)
         
     simu.Finish()
 

@@ -98,16 +98,32 @@ class SN(SN_Object):
         columns: band, flux, fluxerr, snr_m5,flux_e,zp,zpsys,time
         metadata : SNID,Ra,Dec,DayMax,X1,Color,z
         """
+        assert (len(np.unique(obs['pixRa'])) == 1)
+        assert (len(np.unique(obs['pixDec'])) == 1)
+        ra = np.asscalar(np.unique(obs['pixRa']))
+        dec = np.asscalar(np.unique(obs['pixDec']))
 
+        # output table
+        table_lc = Table()
+
+        # set metadata
+        table_lc.meta = dict(zip(['SNID', 'Ra', 'Dec',
+                                  'DayMax', 'X1', 'Color', 'z'], [
+                                      self.SNID, ra, dec, self.sn_parameters['DayMax'],
+                                      self.sn_parameters['X1'], self.sn_parameters['Color'],
+                                      self.sn_parameters['z']]))
+        
         # print('Simulating SNID', self.SNID)
         obs = self.cutoff(obs, self.sn_parameters['DayMax'],
                           self.sn_parameters['z'],
                           self.sn_parameters['min_rf_phase'],
                           self.sn_parameters['max_rf_phase'])
 
+        if len(obs) == 0:
+            return table_lc
+        
         obs.sort(order='mjd')
-        ra = np.asscalar(np.unique(obs['pixRa']))
-        dec = np.asscalar(np.unique(obs['pixDec']))
+       
         # apply dust here since Ra, Dec is known                                                                           
         ebvofMW = self.lsstmwebv.calculateEbv(                                                           
             equatorialCoordinates=np.array(
@@ -141,39 +157,35 @@ class SN(SN_Object):
         e_per_sec = [seds[i].calcADU(bandpass=transes[i],
                                      photParams=photParams[i]) /
                      obs['exptime'][i]*photParams[i].gain for i in nvals]
-        # table_obs=Table(obs)
-        table_obs = Table()
-        # table_obs.remove_column('band')
-        table_obs.add_column(Column(fluxes, name='flux'))
-        table_obs.add_column(Column(fluxes/snr_m5_opsim, name='fluxerr'))
-        table_obs.add_column(Column(snr_m5_opsim, name='snr_m5'))
-        table_obs.add_column(Column(e_per_sec, name='flux_e'))
-        table_obs.add_column(
+        # table_lc=Table(obs)
+      
+        # table_lc.remove_column('band')
+        table_lc.add_column(Column(fluxes, name='flux'))
+        table_lc.add_column(Column(fluxes/snr_m5_opsim, name='fluxerr'))
+        table_lc.add_column(Column(snr_m5_opsim, name='snr_m5'))
+        table_lc.add_column(Column(e_per_sec, name='flux_e'))
+        table_lc.add_column(
             Column(['LSST::'+obs['band'][i][-1]
                     for i in range(len(obs['band']))], name='band',
                    dtype=h5py.special_dtype(vlen=str)))
-        # table_obs.add_column(Column([obs['band'][i][-1]
+        # table_lc.add_column(Column([obs['band'][i][-1]
         # for i in range(len(obs['band']))], name='band'))
-        table_obs.add_column(Column([2.5*np.log10(3631)]*len(obs),
+        table_lc.add_column(Column([2.5*np.log10(3631)]*len(obs),
                                     name='zp'))
-        table_obs.add_column(
+        table_lc.add_column(
             Column(['ab']*len(obs), name='zpsys',
                    dtype=h5py.special_dtype(vlen=str)))
-        table_obs.add_column(Column(obs['mjd'], name='time'))
+        table_lc.add_column(Column(obs['mjd'], name='time'))
 
-        idx = table_obs['flux'] >= 0.
-        table_obs = table_obs[idx]
-        table_obs.meta = dict(zip(['SNID', 'Ra', 'Dec',
-                                   'DayMax', 'X1', 'Color', 'z'], [
-            self.SNID, ra, dec, self.sn_parameters['DayMax'],
-            self.sn_parameters['X1'], self.sn_parameters['Color'],
-            self.sn_parameters['z']]))
-        # print(table_obs.dtype,table_obs['band'])
+        idx = table_lc['flux'] >= 0.
+        table_lc = table_lc[idx]
+        
+        # print(table_lc.dtype,table_lc['band'])
         if display:
-            self.Plot_LC(table_obs['time', 'band',
+            self.Plot_LC(table_lc['time', 'band',
                                    'flux', 'fluxerr', 'zp', 'zpsys'])
 
-        return table_obs
+        return table_lc
 
     def Plot_LC(self, table):
         import pylab as plt
