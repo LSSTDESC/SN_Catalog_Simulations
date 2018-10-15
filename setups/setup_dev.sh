@@ -18,7 +18,7 @@ export SALT2_DIR=${PWD}/SN_Utils/SALT2_Files
 
 #checking whether hdf5 is accessible localy or not
 lib='h5py'
-thedir=${PWD}/lib/python3.6/site-packages
+thedir=${PWD}/lib/python3.6/site-packages/
 echo $thedir
 if [ -d ${thedir}$lib ]
 then
