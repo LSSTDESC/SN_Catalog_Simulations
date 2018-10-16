@@ -84,7 +84,7 @@ class SN(SN_Object):
         self.X0=self.SN.get('x0')
         """
 
-    def __call__(self, obs, display=False):
+    def __call__(self, obs, index_hdf5,display=False):
         """ Simulation of the light curve
 
         Input
@@ -102,16 +102,13 @@ class SN(SN_Object):
         assert (len(np.unique(obs['pixDec'])) == 1)
         ra = np.asscalar(np.unique(obs['pixRa']))
         dec = np.asscalar(np.unique(obs['pixDec']))
+        area = np.asscalar(np.unique(obs['pixarea']))
 
-        # output table
-        table_lc = Table()
-
-        # set metadata
-        table_lc.meta = dict(zip(['SNID', 'Ra', 'Dec',
-                                  'DayMax', 'X1', 'Color', 'z','survey_area'], [
+        metadata = dict(zip(['SNID', 'Ra', 'Dec',
+                                  'DayMax', 'X1', 'Color', 'z','survey_area','index_hdf5'], [
                                       self.SNID, ra, dec, self.sn_parameters['DayMax'],
                                       self.sn_parameters['X1'], self.sn_parameters['Color'],
-                                      self.sn_parameters['z'],np.asscalar(np.unique(obs['pixarea']))]))
+                                      self.sn_parameters['z'], area, index_hdf5]))
         
         # print('Simulating SNID', self.SNID)
         obs = self.cutoff(obs, self.sn_parameters['DayMax'],
@@ -120,8 +117,14 @@ class SN(SN_Object):
                           self.sn_parameters['max_rf_phase'])
 
         if len(obs) == 0:
-            return table_lc
-        
+            return None, metadata
+
+        # output table
+        table_lc = Table()
+
+        # set metadata
+        table_lc.meta = metadata
+
         obs.sort(order='mjd')
        
         # apply dust here since Ra, Dec is known                                                                           
@@ -142,10 +145,17 @@ class SN(SN_Object):
         nvals = range(len(SED_time.wavelen))
         seds = [Sed(wavelen=SED_time.wavelen[i], flambda=SED_time.flambda[i])
                 for i in nvals]
-        transes = [self.telescope.atmosphere[obs['band'][i][-1]]
-                   for i in nvals]
+        transes = np.asarray([self.telescope.atmosphere[obs['band'][i][-1]]
+                   for i in nvals])
         fluxes = np.asarray(
             [seds[i].calcFlux(bandpass=transes[i]) for i in nvals])
+
+        idx = fluxes > 0
+        fluxes = fluxes[idx]
+        transes = transes[idx]
+        obs = obs[idx]
+        nvals = range(len(obs))
+        
         photParams = [PhotometricParameters(
             nexp=obs['exptime'][i]/15.) for i in nvals]
         mag_SN = -2.5 * np.log10(fluxes / 3631.0)  # fluxes are in Jy
@@ -185,7 +195,7 @@ class SN(SN_Object):
             self.Plot_LC(table_lc['time', 'band',
                                    'flux', 'fluxerr', 'zp', 'zpsys'])
 
-        return table_lc
+        return table_lc, metadata
 
     def Plot_LC(self, table):
         import pylab as plt

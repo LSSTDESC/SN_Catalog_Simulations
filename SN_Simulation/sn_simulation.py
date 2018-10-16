@@ -11,7 +11,7 @@ import time
 from astropy.table import vstack, Table, Column
 import os
 import h5py
-
+import multiprocessing
 
 class Simu_All:
     """ Main class for simulation
@@ -39,7 +39,7 @@ class Simu_All:
 
     def __init__(self, cosmo_par, tel_par, sn_parameters,
                  save_status, outdir, prodid,
-                 simu_config, display_lc, names):
+                 simu_config, display_lc, names,nproc):
 
         # self.cosmo_par = cosmo_par
         self.sn_parameters = sn_parameters
@@ -49,6 +49,8 @@ class Simu_All:
         self.index_hdf5 = 100
         self.save_status = save_status
         self.names = names
+        self.nproc = nproc
+        
         self.cosmology = w0waCDM(H0=cosmo_par['H0'],
                                  Om0=cosmo_par['Omega_m'],
                                  Ode0=cosmo_par['Omega_l'],
@@ -91,50 +93,82 @@ class Simu_All:
         all_obs = Observations(data=tab, names=self.names)
         self.fieldname = fieldname
         self.fieldid = fieldid
+        print('number of seasons',len(all_obs.seasons))
         for season in range(len(all_obs.seasons)):
+            time_ref = time.time()
             obs = all_obs.seasons[season]
             # remove the u band
             idx = [i for i, val in enumerate(obs['band']) if val[-1] != 'u']
             if len(obs[idx]) > 0:
                 self.Process_Season(obs[idx], season)
-
+            print('End of simulation',time.time()-time_ref)
+            
     def Process_Season(self, obs, season):
 
         gen_params = self.gen_par(obs)
+        nlc= len(gen_params)
+        batch = range(0,nlc,self.nproc)
+        batch = np.append(batch,nlc)
+
+        for i in range(len(batch)-1):
+            result_queue = multiprocessing.Queue()
         
-        for i, val in enumerate(gen_params[:]):
+            ida = batch[i]
+            idb = batch[i+1]
+
+            for j in range(ida,idb):
+                self.index_hdf5 += 1
+                p=multiprocessing.Process(name='Subprocess-'+str(j),target=self.Process_Season_Single,args=(obs,season,gen_params[j],self.index_hdf5,j,result_queue))
+                p.start()
+
+            resultdict = {}
+            for j in range(ida,idb):
+                resultdict.update(result_queue.get())
+        
+            for p in multiprocessing.active_children():
+                p.join()
+
+            for j in range(ida,idb):
+                
+                if self.save_status:
+                    metadata = resultdict[j][1]
+                    n_lc_points = 0
+                    if resultdict[j][0] is not None:
+                        n_lc_points = len(resultdict[j][0])
+                        resultdict[j][0].write(self.lc_out,
+                                            path='lc_'+str(metadata['index_hdf5']),
+                                            append=True,
+                                            compression=True)
+                    self.sn_meta.append((metadata['SNID'], metadata['Ra'],
+                                         metadata['Dec'], metadata['DayMax'],
+                                         metadata['X1'], metadata['Color'],
+                                         metadata['z'], metadata['index_hdf5'], season,
+                                         self.fieldname, self.fieldid,
+                                         n_lc_points,metadata['survey_area']))
+            """
+            for i, val in enumerate(gen_params[:]):
             self.index_hdf5 += 1
-            sn_par = self.sn_parameters.copy()
-            for name in ['z', 'X1', 'Color', 'DayMax']:
-                sn_par[name] = val[name]
-            SNID = sn_par['Id']+self.index_hdf5
-            sn_object = SN_Object(self.simu_config,
-                                  sn_par,
-                                  self.cosmology,
-                                  self.telescope, SNID)
+            self.Process_Season_Single(obs,season,val)
+            """
+    def Process_Season_Single(self,obs,season,gen_params,index_hdf5,j=-1,output_q=None):
+        sn_par = self.sn_parameters.copy()
+        for name in ['z', 'X1', 'Color', 'DayMax']:
+            sn_par[name] = gen_params[name]
+        SNID = sn_par['Id']+index_hdf5
+        sn_object = SN_Object(self.simu_config,
+                              sn_par,
+                              self.cosmology,
+                              self.telescope, SNID)
 
-            module = import_module(self.simu_config['name'])
-            simu = module.SN(sn_object, self.simu_config)
-            # simulation
-            lc_table = simu(obs, self.display_lc)
-            if self.save_status:
-                # write this table in the lc_out
-                #print('writing',len(lc_table))
-                n_lc_points = len(lc_table)
-                if n_lc_points > 0:
-                    lc_table.write(self.lc_out,
-                                   path='lc_'+str(self.index_hdf5),
-                                   append=True,
-                                   compression=True)
-                # append the parameters in tab_out
-                m_lc = lc_table.meta
-                self.sn_meta.append((m_lc['SNID'], m_lc['Ra'],
-                                     m_lc['Dec'], m_lc['DayMax'],
-                                     m_lc['X1'], m_lc['Color'],
-                                     m_lc['z'], self.index_hdf5, season,
-                                     self.fieldname, self.fieldid,
-                                     n_lc_points,m_lc['survey_area']))
+        module = import_module(self.simu_config['name'])
+        simu = module.SN(sn_object, self.simu_config)
+        # simulation
+        lc_table, metadata = simu(obs, index_hdf5,self.display_lc)
 
+        if output_q is not None:
+            output_q.put({j : (lc_table,metadata)})
+
+           
     def Finish(self):
         if len(self.sn_meta) > 0:
             Table(rows=self.sn_meta,
@@ -186,7 +220,7 @@ def run(config_filename):
 
     simu = Simu_All(cosmo_par, tel_par, sn_parameters,
                     save_status, outdir, prodid,
-                    simu_config, display_lc, names=names)
+                    simu_config, display_lc, names=names,nproc=config['Multiprocessing']['nproc'])
 
     # load input file (.npy)
 

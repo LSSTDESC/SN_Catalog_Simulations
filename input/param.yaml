@@ -36,7 +36,7 @@ Instrument:
    aerosol : False  #aerosol
 Observations: 
    filename: WFD_0.npy   # Name of obs file
-   dirname : /sps/lsst/users/gris/Files_from_OpSim/OpSimLogs_colossus_2665/WFD       # dir of obs file
+   dirname : ../Ana_Cadence_Healpix/OpSimLogs/colossus_2665     # dir of obs file
 Simulator :
     name : SN_Cosmo           # Simulator name: SN_Cosmo,SN_Sim,SN_Ana
     model : salt2-extended   # spectra model
@@ -46,3 +46,5 @@ Display : False #display during LC simulations
 Output:
     directory: Output_Simu
     save: True
+Multiprocessing:
+    nproc: 4
