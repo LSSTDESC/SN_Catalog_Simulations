@@ -174,6 +174,8 @@ class SN(SN_Object):
         table_lc.add_column(Column(fluxes/snr_m5_opsim, name='fluxerr'))
         table_lc.add_column(Column(snr_m5_opsim, name='snr_m5'))
         table_lc.add_column(Column(e_per_sec, name='flux_e'))
+        table_lc.add_column(Column(mag_SN, name='mag'))
+        table_lc.add_column(Column((2.5/np.log(10.))/snr_m5_opsim, name='magerr'))
         table_lc.add_column(
             Column(['LSST::'+obs['band'][i][-1]
                     for i in range(len(obs['band']))], name='band',

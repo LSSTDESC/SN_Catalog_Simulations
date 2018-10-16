@@ -1,4 +1,4 @@
-ProductionID: WFD_0
+ProductionID: Fake_Obs
 SN parameters:
    Id : 100                   # Id of the first SN
    X1_Color:                    # stretch and color
@@ -13,7 +13,7 @@ SN parameters:
        step: 0.05
        rate : Perrett # Type Ia volumetric rate : Perrett, Ripoche, Dilday.
    DayMax:                 # Tmax (obs. frame)
-       type : uniform #uniform or random
+       type : unique #uniform or random or unique
        step : 1 # if uniform: step (in day) between Tmin(obs) and Tmax(obs)      
    min_rf_phase : -20.        # obs min phase (rest frame)
    max_rf_phase : 60.         # obs max phase (rest frame)
@@ -35,8 +35,8 @@ Instrument:
    atmos : True  #atmos
    aerosol : False  #aerosol
 Observations: 
-   filename: WFD_0.npy   # Name of obs file
-   dirname : ../Ana_Cadence_Healpix/OpSimLogs/colossus_2665     # dir of obs file
+   filename: Fake_Obs.npy   # Name of obs file
+   dirname : ../Ana_npy/    # dir of obs file
 Simulator :
     name : SN_Cosmo           # Simulator name: SN_Cosmo,SN_Sim,SN_Ana
     model : salt2-extended   # spectra model
