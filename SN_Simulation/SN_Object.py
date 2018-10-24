@@ -9,12 +9,26 @@ class SN_Object:
     necessary parameters for simulation
     SN classes inherit from SN_Object
     """
-    def __init__(self, name, sn_parameters, cosmology, Telescope, snid):
+    def __init__(self, name, sn_parameters, cosmology,
+                 Telescope, snid,area,
+                 mjdCol='mjd', RaCol = 'pixRa', DecCol = 'pixDec',
+                 filterCol='band', exptimeCol = 'exptime',
+                 m5Col = 'fiveSigmaDepth', seasonCol='season'):
+        
         self._name = name
         self._sn_parameters = sn_parameters
         self._cosmology = cosmology
         self._telescope = Telescope
         self._SNID = snid
+
+        self.mjdCol = mjdCol
+        self.RaCol = RaCol
+        self.DecCol = DecCol
+        self.filterCol = filterCol
+        self.exptimeCol = exptimeCol
+        self.m5Col = m5Col
+        self.seasonCol = seasonCol
+        self.area = area
 
     @property
     def name(self):
@@ -55,10 +69,10 @@ class SN_Object:
         red_cutoff = 800.
 
         mean_restframe_wavelength = np.asarray(
-            [self.telescope.mean_wavelength[obser['band'][-1]] /
+            [self.telescope.mean_wavelength[obser[self.filterCol][-1]] /
              (1. + z) for obser in obs])
 
-        p = (obs['mjd']-T0)/(1.+z)
+        p = (obs[self.mjdCol]-T0)/(1.+z)
 
         idx = (p >= min_rf_phase) & (p <= max_rf_phase)
         idx &= (mean_restframe_wavelength > blue_cutoff)

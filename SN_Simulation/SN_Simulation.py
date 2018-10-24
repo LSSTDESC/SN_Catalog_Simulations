@@ -25,7 +25,8 @@ class SN_Simulation:
     - simu_config: Simulator configuration
     - display_lc: to display (True) or not (False)
     the light curves during production
-    - names: names of some variable used
+    - set of names: names of some variable used in Observation data
+    - nproc: number of multiprocess
 
     Returns
     ---------
@@ -37,17 +38,28 @@ class SN_Simulation:
 
     def __init__(self, cosmo_par, tel_par, sn_parameters,
                  save_status, outdir, prodid,
-                 simu_config, display_lc, names,nproc):
+                 simu_config, display_lc,area,
+                  mjdCol='mjd', RaCol='pixRa', DecCol='pixDec',
+                 filterCol='band', exptimeCol='exptime',
+                 m5Col='fiveSigmaDepth', seasonCol='season',
+                 nproc=1):
 
         # self.cosmo_par = cosmo_par
         self.sn_parameters = sn_parameters
         self.simu_config = simu_config
         self.display_lc = display_lc
-        self.gen_par = Generate_Sample(sn_parameters, cosmo_par)
         self.index_hdf5 = 100
         self.save_status = save_status
-        self.names = names
+        self.mjdCol = mjdCol
+        self.RaCol = RaCol
+        self.DecCol = DecCol
+        self.filterCol = filterCol
+        self.exptimeCol = exptimeCol
+        self.m5Col = m5Col
+        self.seasonCol = seasonCol
         self.nproc = nproc
+        self.area= area
+        self.gen_par = Generate_Sample(sn_parameters, cosmo_par,mjdCol=self.mjdCol, area = self.area)
         
         self.cosmology = w0waCDM(H0=cosmo_par['H0'],
                                  Om0=cosmo_par['Omega_m'],
@@ -85,7 +97,24 @@ class SN_Simulation:
             os.remove(self.simu_out)
         if os.path.exists(self.lc_out):
             os.remove(self.lc_out)
+            
+    def __call__(self, obs,fieldname,fieldid):
 
+        #obs = Observations(data=tab, names=self.names)
+        self.fieldname = fieldname
+        self.fieldid = fieldid
+        seasons = np.unique(obs[self.seasonCol])
+        print('number of seasons',len(seasons))
+        for season in seasons:
+            time_ref = time.time()
+            idxa = obs[self.seasonCol] == season
+            obs_season = obs[idxa]
+            # remove the u band
+            idx = [i for i, val in enumerate(obs_season[self.filterCol]) if val[-1] != 'u']
+            if len(obs_season[idx]) > 0:
+                self.Process_Season(obs_season[idx], season)
+            print('End of simulation',time.time()-time_ref)
+    """
     def __call__(self, tab,fieldname,fieldid):
 
         all_obs = Observations(data=tab, names=self.names)
@@ -96,11 +125,11 @@ class SN_Simulation:
             time_ref = time.time()
             obs = all_obs.seasons[season]
             # remove the u band
-            idx = [i for i, val in enumerate(obs['band']) if val[-1] != 'u']
+            idx = [i for i, val in enumerate(obs[self.filterCol]) if val[-1] != 'u']
             if len(obs[idx]) > 0:
                 self.Process_Season(obs[idx], season)
             print('End of simulation',time.time()-time_ref)
-            
+    """        
     def Process_Season(self, obs, season):
 
         gen_params = self.gen_par(obs)
@@ -153,10 +182,14 @@ class SN_Simulation:
         for name in ['z', 'X1', 'Color', 'DayMax']:
             sn_par[name] = gen_params[name]
         SNID = sn_par['Id']+index_hdf5
-        sn_object = SN_Object(self.simu_config,
+        sn_object = SN_Object(self.simu_config['name'],
                               sn_par,
                               self.cosmology,
-                              self.telescope, SNID)
+                              self.telescope, SNID,self.area,
+                              mjdCol=self.mjdCol, RaCol=self.RaCol,
+                              DecCol= self.DecCol, 
+                              filterCol=self.filterCol, exptimeCol=self.exptimeCol,
+                              m5Col=self.m5Col)
 
         module = import_module(self.simu_config['name'])
         simu = module.SN(sn_object, self.simu_config)
