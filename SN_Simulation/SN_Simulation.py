@@ -38,7 +38,7 @@ class SN_Simulation:
 
     def __init__(self, cosmo_par, tel_par, sn_parameters,
                  save_status, outdir, prodid,
-                 simu_config, display_lc,area,
+                 simu_config, display_lc,time_display,area,
                   mjdCol='mjd', RaCol='pixRa', DecCol='pixDec',
                  filterCol='band', exptimeCol='exptime',
                  m5Col='fiveSigmaDepth', seasonCol='season',
@@ -48,6 +48,7 @@ class SN_Simulation:
         self.sn_parameters = sn_parameters
         self.simu_config = simu_config
         self.display_lc = display_lc
+        self.time_display = time_display
         self.index_hdf5 = 100
         self.save_status = save_status
         self.mjdCol = mjdCol
@@ -194,7 +195,7 @@ class SN_Simulation:
         module = import_module(self.simu_config['name'])
         simu = module.SN(sn_object, self.simu_config)
         # simulation
-        lc_table, metadata = simu(obs, index_hdf5,self.display_lc)
+        lc_table, metadata = simu(obs, index_hdf5,self.display_lc,self.time_display)
 
         if output_q is not None:
             output_q.put({j : (lc_table,metadata)})

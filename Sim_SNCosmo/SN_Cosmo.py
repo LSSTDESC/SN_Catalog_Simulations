@@ -87,7 +87,7 @@ class SN(SN_Object):
         self.X0=self.SN.get('x0')
         """
 
-    def __call__(self, obs, index_hdf5,display=False):
+    def __call__(self, obs, index_hdf5,display=False, time_display=0.):
         """ Simulation of the light curve
 
         Input
@@ -199,11 +199,11 @@ class SN(SN_Object):
         # print(table_lc.dtype,table_lc['band'])
         if display:
             self.Plot_LC(table_lc['time', 'band',
-                                   'flux', 'fluxerr', 'zp', 'zpsys'])
+                                   'flux', 'fluxerr', 'zp', 'zpsys'], time_display)
 
         return table_lc, metadata
 
-    def Plot_LC(self, table):
+    def Plot_LC(self, table, time_display):
         import pylab as plt
         print('What will be plotted', table)
         prefix = 'LSST::'
@@ -232,9 +232,9 @@ class SN(SN_Object):
                   x0=self.X0,
                   x1=self.sn_parameters['X1'])
         sncosmo.plot_lc(data=table, model=model)
-    
+        
         plt.draw()
-        plt.pause(1.)
+        plt.pause(time_display)
         plt.close()
         
         
