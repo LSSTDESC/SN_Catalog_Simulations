@@ -5,7 +5,6 @@ from lsst.sims.photUtils import Bandpass, Sed
 from lsst.sims.photUtils import SignalToNoise
 from lsst.sims.photUtils import PhotometricParameters
 from astropy.table import vstack, Table, Column
-import astropy.units as u
 import matplotlib.animation as manimation
 import pylab as plt
 import os
@@ -203,40 +202,6 @@ class SN(SN_Object):
 
         return table_lc, metadata
 
-    def Plot_LC(self, table, time_display):
-        import pylab as plt
-        print('What will be plotted', table)
-        prefix = 'LSST::'
-        print(table.dtype)
-        for band in 'ugrizy':
-            name_filter = prefix+band
-            if self.telescope.airmass > 0:
-                bandpass = sncosmo.Bandpass(
-                    self.telescope.atmosphere[band].wavelen,
-                    self.telescope.atmosphere[band].sb,
-                    name=name_filter,
-                    wave_unit=u.nm)
-            else:
-                bandpass = sncosmo.Bandpass(
-                    self.telescope.system[band].wavelen,
-                    self.telescope.system[band].sb,
-                    name=name_filter,
-                    wave_unit=u.nm)
-            # print('registering',name_filter)
-            sncosmo.registry.register(bandpass, force=True)
-
-        model = sncosmo.Model('salt2')
-        model.set(z=self.sn_parameters['z'],
-                  c=self.sn_parameters['Color'],
-                  t0=self.sn_parameters['DayMax'],
-                  x0=self.X0,
-                  x1=self.sn_parameters['X1'])
-        sncosmo.plot_lc(data=table, model=model)
-        
-        plt.draw()
-        plt.pause(time_display)
-        plt.close()
-        
         
     def X0_norm(self):
         """ Extimate X0 from flux at 10pc
