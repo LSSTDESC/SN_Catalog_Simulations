@@ -100,10 +100,10 @@ class SN(SN_Object):
         columns: band, flux, fluxerr, snr_m5,flux_e,zp,zpsys,time
         metadata : SNID,Ra,Dec,DayMax,X1,Color,z
         """
-        assert (len(np.unique(obs[self.RaCol])) == 1)
-        assert (len(np.unique(obs[self.DecCol])) == 1)
-        ra = np.asscalar(np.unique(obs[self.RaCol]))
-        dec = np.asscalar(np.unique(obs[self.DecCol]))
+        #assert (len(np.unique(obs[self.RaCol])) == 1)
+        #assert (len(np.unique(obs[self.DecCol])) == 1)
+        ra = np.mean(obs[self.RaCol])
+        dec = np.mean(obs[self.DecCol])
         area = self.area
 
         metadata = dict(zip(['SNID', 'Ra', 'Dec',
