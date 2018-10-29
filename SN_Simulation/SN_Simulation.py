@@ -99,21 +99,24 @@ class SN_Simulation:
         if os.path.exists(self.lc_out):
             os.remove(self.lc_out)
             
-    def __call__(self, obs,fieldname,fieldid):
+    def __call__(self, obs,fieldname,fieldid,season):
 
         #obs = Observations(data=tab, names=self.names)
         self.fieldname = fieldname
         self.fieldid = fieldid
-        seasons = np.unique(obs[self.seasonCol])
+        if season == -1:
+            seasons = np.unique(obs[self.seasonCol])
+        else:
+            seasons = [season]
         print('number of seasons',len(seasons))
-        for season in seasons:
+        for seas in seasons:
             time_ref = time.time()
-            idxa = obs[self.seasonCol] == season
+            idxa = obs[self.seasonCol] == seas
             obs_season = obs[idxa]
             # remove the u band
             idx = [i for i, val in enumerate(obs_season[self.filterCol]) if val[-1] != 'u']
             if len(obs_season[idx]) > 0:
-                self.Process_Season(obs_season[idx], season)
+                self.Process_Season(obs_season[idx], seas)
             print('End of simulation',time.time()-time_ref)
     """
     def __call__(self, tab,fieldname,fieldid):
@@ -134,6 +137,8 @@ class SN_Simulation:
     def Process_Season(self, obs, season):
 
         gen_params = self.gen_par(obs)
+        if gen_params is None:
+            return
         nlc= len(gen_params)
         batch = range(0,nlc,self.nproc)
         batch = np.append(batch,nlc)
