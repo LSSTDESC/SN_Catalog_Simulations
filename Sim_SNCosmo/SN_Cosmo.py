@@ -167,16 +167,20 @@ class SN(SN_Object):
             photParams[i]) for i in nvals]
         snr_m5_opsim = [calc[i][0] for i in nvals]
         # gamma_opsim=[calc[i][1] for i in nvals]
+        """
         e_per_sec = [seds[i].calcADU(bandpass=transes[i],
                                      photParams=photParams[i]) /
                      obs[self.exptimeCol][i]*photParams[i].gain for i in nvals]
+        """
+        e_per_sec = self.telescope.mag_to_flux_e_sec(mag_SN,obs[self.filterCol])
+        #print(e_per_sec,e_per_sec_b)
         # table_lc=Table(obs)
       
         # table_lc.remove_column('band')
         table_lc.add_column(Column(fluxes, name='flux'))
         table_lc.add_column(Column(fluxes/snr_m5_opsim, name='fluxerr'))
         table_lc.add_column(Column(snr_m5_opsim, name='snr_m5'))
-        table_lc.add_column(Column(e_per_sec, name='flux_e'))
+        table_lc.add_column(Column(e_per_sec[:,1], name='flux_e'))
         table_lc.add_column(Column(mag_SN, name='mag'))
         table_lc.add_column(Column((2.5/np.log(10.))/snr_m5_opsim, name='magerr'))
         table_lc.add_column(
