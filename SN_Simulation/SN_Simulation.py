@@ -109,15 +109,18 @@ class SN_Simulation:
         else:
             seasons = [season]
         print('number of seasons',len(seasons))
-        for seas in seasons:
-            time_ref = time.time()
-            idxa = obs[self.seasonCol] == seas
-            obs_season = obs[idxa]
-            # remove the u band
-            idx = [i for i, val in enumerate(obs_season[self.filterCol]) if val[-1] != 'u']
-            if len(obs_season[idx]) > 0:
-                self.Process_Season(obs_season[idx], seas)
-            print('End of simulation',time.time()-time_ref)
+        if self.simu_config['name'] != 'SN_Fast':
+            for seas in seasons:
+                time_ref = time.time()
+                idxa = obs[self.seasonCol] == seas
+                obs_season = obs[idxa]
+                # remove the u band
+                idx = [i for i, val in enumerate(obs_season[self.filterCol]) if val[-1] != 'u']
+                if len(obs_season[idx]) > 0:
+                    self.Process_Season(obs_season[idx], seas)
+        else:
+            self.Process_Fast(obs)
+        print('End of simulation',time.time()-time_ref)
     """
     def __call__(self, tab,fieldname,fieldid):
 
@@ -217,3 +220,25 @@ class SN_Simulation:
                          'f8', 'i4', 'i4','S3','i8','i8','f8')).write(
                              self.simu_out, 'summary', compression=True)
 
+    def Process_Fast(self, obs):
+        
+        sn_par = self.sn_parameters.copy()
+        """
+        for name in ['z', 'X1', 'Color', 'DayMax']:
+            sn_par[name] = gen_params[name]
+        """
+        gen_params = self.gen_par(obs)
+        SNID = sn_par['Id']+self.index_hdf5
+        sn_object = SN_Object(self.simu_config['name'],
+                              gen_params,
+                              self.cosmology,
+                              self.telescope, SNID,self.area,
+                              mjdCol=self.mjdCol, RaCol=self.RaCol,
+                              DecCol= self.DecCol, 
+                              filterCol=self.filterCol, exptimeCol=self.exptimeCol,
+                              m5Col=self.m5Col)
+        
+        module = import_module(self.simu_config['name'])
+        simu = module.SN(sn_object, self.simu_config)
+        simu(obs, self.index_hdf5,self.display_lc,self.time_display,gen_params)
+        

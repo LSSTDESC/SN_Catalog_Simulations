@@ -1,6 +1,8 @@
 from SN_Telescope import Telescope
 import numpy as np
 import astropy.units as u
+from astropy.table import Table
+from collections import OrderedDict as odict
 
 class SN_Object:
     """ class SN object
@@ -79,14 +81,23 @@ class SN_Object:
         idx &= (mean_restframe_wavelength < red_cutoff)
         return obs[idx]
 
-    def Plot_LC(self, table, time_display):
+    def Plot_LC(self, table, time_display,z,DayMax,season):
         import pylab as plt
         import sncosmo
         print('What will be plotted')
         print(table)
+        print(self.sn_parameters)
         prefix = 'LSST::'
-        print(table.dtype)
-        for band in 'ugrizy':
+        print(table.dtype,len(table))
+        _photdata_aliases = odict([
+            ('time', set(['time', 'date', 'jd', 'mjd', 'mjdobs', 'mjd_obs'])),
+            ('band', set(['band', 'bandpass', 'filter', 'flt'])),
+            ('flux', set(['flux', 'f'])),
+            ('fluxerr', set(['fluxerr', 'fe', 'fluxerror', 'flux_error', 'flux_err'])),
+            ('zp', set(['zp', 'zpt', 'zeropoint', 'zero_point'])),
+            ('zpsys', set(['zpsys', 'zpmagsys', 'magsys']))
+        ])
+        for band in 'grizy':
             name_filter = prefix+band
             if self.telescope.airmass > 0:
                 bandpass = sncosmo.Bandpass(
@@ -104,11 +115,33 @@ class SN_Object:
             sncosmo.registry.register(bandpass, force=True)
 
         model = sncosmo.Model('salt2')
-        model.set(z=self.sn_parameters['z'],
-                  c=self.sn_parameters['Color'],
-                  t0=self.sn_parameters['DayMax'],
+        model.set(z=z,
+                  c=np.unique(self.sn_parameters['Color']),
+                  t0=DayMax,
                   #x0=self.X0,
-                  x1=self.sn_parameters['X1'])
+                  x1=np.unique(self.sn_parameters['X1']))
+        print('tests',isinstance(table, np.ndarray),isinstance(table,Table),isinstance(table,dict))
+        array_tab = np.asarray(table)
+        print(array_tab.dtype)
+        colnames = array_tab.dtype.names
+        # Create mapping from lowercased column names to originals
+        lower_to_orig = dict([(colname.lower(), colname) for colname in colnames])
+        
+        # Set of lowercase column names
+        lower_colnames = set(lower_to_orig.keys())
+        orig_colnames_to_use = []
+        for aliases in _photdata_aliases.values():
+            i = lower_colnames & aliases
+            if len(i) != 1:
+                raise ValueError('Data must include exactly one column from {0} '
+                                 '(case independent)'.format(', '.join(aliases)))
+            orig_colnames_to_use.append(lower_to_orig[i.pop()])
+
+        
+        new_data = table[orig_colnames_to_use].copy()
+        print('bbbb',orig_colnames_to_use,_photdata_aliases.keys(),new_data.dtype.names)
+        new_data.dtype.names = _photdata_aliases.keys()
+
         sncosmo.plot_lc(data=table, model=model)
         
         plt.draw()

@@ -36,8 +36,8 @@ class SN(SN_Object):
         X1=self.sn_parameters['X1']
         Color=self.sn_parameters['Color']
         zvals=[self.sn_parameters['z']]
-        print('loading ref',zvals)
-        lc_ref_tot=Load_Reference(X1,Color,zvals).tab
+        print('loading ref',np.unique(zvals),param)
+        lc_ref_tot=Load_Reference(simu_param['Reference File'],np.unique(zvals)).tab
 
         self.lc_ref={}
         
@@ -56,7 +56,7 @@ class SN(SN_Object):
             self.m5_ref[band]=np.unique(lc_sel['m5'])[0]
             
         
-    def __call__(self, obs, index_hdf5,display=False, time_display=0.):
+    def __call__(self, obs, index_hdf5,display=False, time_display=0.,gen_par=None):
         """ Simulation of the light curve
 
         Input
@@ -83,22 +83,125 @@ class SN(SN_Object):
                                       self.sn_parameters['z'], area, index_hdf5]))
         
         # print('Simulating SNID', self.SNID)
+        print('sn params',self.sn_parameters.dtype,self.sn_parameters['DayMax'],self.sn_parameters['z'],gen_par.dtype)
+        """
         obs = self.cutoff(obs, self.sn_parameters['DayMax'],
                           self.sn_parameters['z'],
                           self.sn_parameters['min_rf_phase'],
                           self.sn_parameters['max_rf_phase'])
-
+        """
         if len(obs) == 0:
             return None, metadata
-        obs = self.Add_Gamma(obs)
-        obs = self.Proc_Extend(self.sn_parameters,obs)
-        lc = self.Multiproc(obs)
 
-        print('light curve',lc)
-        print(lc.dtype)
+        print(len(gen_par['DayMax']),len(gen_par['z']))
+        result_queue = multiprocessing.Queue()
+        bands = 'grizy'
+        bands = 'i'
+        tab_tot = Table()
+        for j,band in enumerate(bands):
+            idx = obs[self.filterCol] == band
+            p=multiprocessing.Process(name='Subprocess-'+str(j),target=self.Process_band,args=(obs[idx],band,gen_par,j,result_queue))
+            p.start()
+             
+        resultdict = {}
+        for j,band in enumerate(bands):
+            resultdict.update(result_queue.get())
+		
+        for p in multiprocessing.active_children():
+            p.join()
+                
+        for j,band in enumerate(bands):
+            if resultdict[j] is not None:
+                tab_tot=vstack([tab_tot,resultdict[j]])
+
+
+        print('finally',tab_tot)
+
+
         if display:
-            self.Plot_LC(lc['time','band','flux', 'fluxerr', 'zp', 'zpsys'], time_display)
+            season = 1
+            zref = 0.5
+            idx = (tab_tot['season'] == season)&(tab_tot['z']==zref)
+            sel_tab = tab_tot[idx]
+            for DayMax in np.unique(sel_tab['DayMax']):
+                idxb = sel_tab['DayMax'] == DayMax
+                self.Plot_LC(sel_tab[idxb]['time','band','flux', 'fluxerr', 'zp', 'zpsys'], time_display,zref,DayMax,season)
         return lc, metadata
+
+    def Process_band(self,sel_obs,band,gen_par,j=-1,output_q=None):
+        
+        method = 'nearest'
+        if len(sel_obs) == 0:
+            if output_q is not None:
+                output_q.put({j : None})
+            else:
+                return None
+
+        xi = sel_obs[self.mjdCol]-gen_par['DayMax'][:,np.newaxis]
+        yi = gen_par['z'][:,np.newaxis]
+        x = self.lc_ref[band]['time']
+        y = self.lc_ref[band]['z']
+        z = self.lc_ref[band]['flux']
+        zb=self.lc_ref[band]['fluxerr']
+        fluxes_obs = griddata((x,y),z,(xi, yi), method=method)
+        fluxes_obs_err=griddata((x,y),zb,(xi, yi), method=method)
+        p = xi/(1.+yi)
+        min_rf_phase = gen_par['min_rf_phase'][:,np.newaxis]
+        max_rf_phase = gen_par['max_rf_phase'][:,np.newaxis]
+        flag = (p >= min_rf_phase) & (p <= max_rf_phase)
+        flag_idx = np.argwhere((p >= min_rf_phase) & (p <= max_rf_phase))
+    
+        gamma_obs = self.telescope.gamma(sel_obs[self.m5Col],[band]*len(sel_obs),sel_obs[self.exptimeCol])
+        mag_obs = -2.5*np.log10(fluxes_obs/3631.)
+        m5 = np.asarray([self.m5_ref[band]]*len(sel_obs))
+        gammaref = np.asarray([self.gamma_ref[band]]*len(sel_obs))
+        srand_ref = self.srand(np.tile(gammaref,(len(mag_obs),1)),mag_obs,np.tile(m5,(len(mag_obs),1)))
+        srand_obs = self.srand(np.tile(gamma_obs,(len(mag_obs),1)),mag_obs,np.tile(sel_obs[self.m5Col],(len(mag_obs),1)))
+        correct_m5 = srand_ref/srand_obs
+        fluxes_obs_err = fluxes_obs_err/correct_m5
+        
+        #now apply the flag to select LC points in the "good" phase range...
+        fluxes = np.ma.array(fluxes_obs,mask=~flag)
+        fluxes_err = np.ma.array(fluxes_obs_err,mask=~flag)
+        snr_m5 = fluxes_obs/fluxes_err
+        obs_time = np.ma.array(np.tile(sel_obs[self.mjdCol],(len(mag_obs),1)),mask=~flag)
+        seasons = np.ma.array(np.tile(sel_obs[self.seasonCol],(len(mag_obs),1)),mask=~flag)
+        z_vals = gen_par['z'][flag_idx[:,0]]
+        DayMax_vals = gen_par['DayMax'][flag_idx[:,0]]
+        mag_obs = np.ma.array(mag_obs,mask=~flag)
+        
+        print(fluxes)
+        tab = Table()
+        tab.add_column(Column(fluxes[~fluxes.mask],name='flux'))
+        tab.add_column(Column(fluxes_err[~fluxes_err.mask],name='fluxerr'))
+        tab.add_column(Column(snr_m5[~snr_m5.mask], name='snr_m5')) 
+        tab.add_column(Column(mag_obs[~mag_obs.mask],name='mag'))
+        tab.add_column(Column((2.5/np.log(10.))/snr_m5[~snr_m5.mask], name='magerr'))
+        tab.add_column(Column(obs_time[~obs_time.mask],name='time'))
+        tab.add_column(Column([2.5*np.log10(3631)]*len(tab),
+                                    name='zp'))
+        tab.add_column(
+            Column(['ab']*len(tab), name='zpsys',
+                   dtype=h5py.special_dtype(vlen=str)))
+
+        tab.add_column(
+            Column(['LSST::'+band]*len(tab), name='band',
+                       dtype=h5py.special_dtype(vlen=str)))
+
+        tab.add_column(Column(z_vals,name='z'))
+        tab.add_column(Column(DayMax_vals,name='DayMax'))
+        tab.add_column(Column(seasons[~seasons.mask],name='season'))
+        print('Final result',tab)
+        idx = tab['flux'] >= 0.
+        lc = tab[idx]
+        if len(lc) == 0:
+            lc = None
+        if output_q is not None:
+            output_q.put({j : lc})
+        else:
+            return lc
+        
+       
 
     def Add_Gamma(self,obs):
         
@@ -582,36 +685,52 @@ class Process_X1_Color:
 
 class Load_Reference:
 
-    def __init__(self,X1,Color,tab):
+    def __init__(self,filename,zvals):
         
-        thedir='Reference_LC/'
-        self.fi=thedir+'LC_Ref_'+str(X1)+'_'+str(Color)+'.hdf5'
-        #f = h5py.File(fi,'r')
+        self.fi=filename
+        self.tab = self.Read_Ref(zvals)
 
-        #print('loading reference file',self.fi)
-        #self.tab=self.Read_Multiproc(tab)
-        self.tab = self.Read_Ref(tab)
-
-    def Read_Ref(self,tab,j=-1,output_q=None):
+    def Read_Ref(self,zvals,j=-1,output_q=None):
 
         tab_tot=Table()
-        #zval=tab['z']
-        keys=np.unique([int(z*100) for z in tab])
+        """
+        keys=np.unique([int(z*100) for z in zvals])
+        print(keys)
+        """
         f = h5py.File(self.fi,'r')
         keys=f.keys()
 
-        #print('alors',tab)
-        print('hello keys',keys,tab)
+        zvals_arr = np.array(zvals)
+        
         for kk in keys:
             
             tab_b=Table.read(self.fi, path=kk)
-            #if tab_b is not None:
-            for val in tab:
-                if np.abs(np.unique(tab_b['z'])-val)<0.01:
-                    #print('loading ref',np.unique(tab_b['z']))
-                    tab_tot=vstack([tab_tot,tab_b])
-                    break
+            #print('hello key',kk,np.unique(tab_b['z']))
+            if tab_b is not None:
+                diff = tab_b['z']-zvals_arr[:,np.newaxis]
+                #flag = np.abs(diff)<1.e-3
+                flag_idx = np.where(np.abs(diff)<1.e-3)
+                if len(flag_idx[1]) > 0:
+                    tab_tot=vstack([tab_tot,tab_b[flag_idx[1]]])
+                """
+                print(flag,flag_idx[1])
+                print('there man',tab_b[flag_idx[1]])
+                mtile = np.tile(tab_b['z'],(len(zvals),1))
+                #print('mtile',mtile*flag)
                 
+                masked_array = np.ma.array(mtile,mask=~flag)
+                
+                print('resu masked',masked_array,masked_array.shape)
+                print('hhh',masked_array[~masked_array.mask])
+                
+            
+                for val in zvals:
+                    print('hello',tab_b[['band','z','time']],'and',val)
+                    if np.abs(np.unique(tab_b['z'])-val)<0.01:
+                        #print('loading ref',np.unique(tab_b['z']))
+                        tab_tot=vstack([tab_tot,tab_b])
+                        break
+                """
         if output_q is not None:
             output_q.put({j : tab_tot})
         else:
