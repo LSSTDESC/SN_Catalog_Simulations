@@ -59,7 +59,7 @@ class SN_Simulation:
         self.seasonCol = seasonCol
         self.nproc = nproc
         self.area= area
-        self.gen_par = Generate_Sample(sn_parameters, cosmo_par,mjdCol=self.mjdCol, area = self.area)
+        self.gen_par = Generate_Sample(sn_parameters, cosmo_par,mjdCol=self.mjdCol, area = self.area, min_rf_phase=sn_parameters['min_rf_phase'],max_rf_phase=sn_parameters['max_rf_phase'])
         
         self.cosmology = w0waCDM(H0=cosmo_par['H0'],
                                  Om0=cosmo_par['Omega_m'],
@@ -121,7 +121,12 @@ class SN_Simulation:
                         self.Process_Season(obs_season[idx], seas)
         else:
             time_ref = time.time()
-            self.Process_Fast(obs,fieldname,fieldid) 
+            if season != -1:
+                  for seas in seasons:
+                      idxa = obs[self.seasonCol] == seas
+                      self.Process_Fast(obs[idxa],fieldname,fieldid) 
+            else:
+                self.Process_Fast(obs,fieldname,fieldid) 
            
         print('End of simulation',time.time()-time_ref)
     """
@@ -256,7 +261,7 @@ class SN_Simulation:
                     sel = tab[idx]
                     index_hdf5+=1
                     SNID = sn_par['Id']+index_hdf5
-                    print('hello index',index_hdf5,np.unique(sel['DayMax']))
+                    print('hello index',season,index_hdf5,np.unique(sel['DayMax']))
                     self.sn_meta.append((SNID, ra, dec,-1,np.asscalar(np.unique(sn_par['X1'])),np.asscalar(np.unique(sn_par['Color'])),
                                      z, index_hdf5,season,fieldname,fieldid,len(sel),self.area))
                     

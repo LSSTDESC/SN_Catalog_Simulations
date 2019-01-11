@@ -100,8 +100,8 @@ class SN(SN_Object):
             return ra,dec,None
 
         result_queue = multiprocessing.Queue()
-        #bands = 'grizy'
-        bands = 'i'
+        bands = 'grizy'
+        #bands = 'i'
         
         for j,band in enumerate(bands):
             idx = obs[self.filterCol] == band
@@ -153,12 +153,14 @@ class SN(SN_Object):
         time_ref = time.time()
         """
         #self.Save(tab_tot)
+        
         time_ref = time.time()
         LC_Summary = self.Ana_LC(tab_tot)
         print('after Ana',time.time()-time_ref)
-        
-        self.Plot_Sigma_c(LC_Summary)
+
         print(LC_Summary)
+        self.Plot_Sigma_c(LC_Summary)
+        
         
         if display:
             season = 1
@@ -209,13 +211,14 @@ class SN(SN_Object):
         # remove LC points outside the restframe phase range
         min_rf_phase = gen_par['min_rf_phase'][:,np.newaxis]
         max_rf_phase = gen_par['max_rf_phase'][:,np.newaxis]
+        print('phases min and max',gen_par['min_rf_phase'],gen_par['max_rf_phase'])
         flag = (p >= min_rf_phase) & (p <= max_rf_phase)
         
-        # remove LC points outside the (blue-red) range 
+        # remove LC points outside the (blue-red) range
         mean_restframe_wavelength = np.array([self.telescope.mean_wavelength[band]]*len(sel_obs))
         mean_restframe_wavelength = np.tile(mean_restframe_wavelength,(len(gen_par),1))/(1.+gen_par['z'][:,np.newaxis])
         flag &= (mean_restframe_wavelength > self.blue_cutoff)&(mean_restframe_wavelength < self.red_cutoff)
-
+        
         flag_idx = np.argwhere(flag)
 
         # Correct fluxes_err (m5 in generation probably different from m5 obs)
@@ -240,7 +243,13 @@ class SN(SN_Object):
         Fisher_Mat = {}
         for key,vals in Derivative_for_Fisher.items():
             Fisher_Mat[key] = np.ma.array(vals,mask=~flag)
-    
+
+        """
+        print('phases',p)
+        print('tile obs',np.tile(sel_obs[self.mjdCol],(len(mag_obs),1)))
+        print('obs time',band,len(obs_time[~obs_time.mask]),obs_time[~obs_time.mask])
+        print('zvals',z_vals)
+        """
         #print(fluxes)
         
         # Results are stored in an astropy Table
@@ -291,6 +300,8 @@ class SN(SN_Object):
         r = []
         restab = Table()
         #for season in np.unique(tab['season']):
+        idx = tab['snr_m5'] >= 10.
+        tab = tab[idx]
         for season in np.unique(tab['season']):
             idxa = tab['season'] == season
             sela = tab[idxa]
@@ -299,14 +310,10 @@ class SN(SN_Object):
                 idxb = np.abs(sela['z']-z)<1.e-5
                 selb = sela[idxb]
                 DayMax = np.unique(selb['DayMax'])
-                print('alors',season,z,len(DayMax))
                 diff = selb['DayMax']-DayMax[:,np.newaxis]
                 flag = np.abs(diff)<1.e-5
-                #flag_idx = np.argwhere(flag)
-                #print(diff*flag)
                 resu = np.ma.array(np.tile(selb,(len(DayMax),1)),mask=~flag)
                 parts = {}
-                print('there bef',time.time()-time_refa)
                 time_refa = time.time()
                 for ia,vala in enumerate(self.param_Fisher):
                     for jb,valb in enumerate(self.param_Fisher):
@@ -319,6 +326,8 @@ class SN(SN_Object):
                 size = len(resu)
                 #size = 3
                 Fisher_Big = np.zeros((3*size,3*size))
+                Big_Diag = np.zeros((3*size,3*size))
+                Big_Diag = []
                 restab_loc = Table()
                 restab_loc.add_column(Column([season]*size,name='season'))
                 restab_loc.add_column(Column([z]*size,name='z'))
@@ -326,24 +335,30 @@ class SN(SN_Object):
                 print('there two',time.time()-time_refa)
                 time_refa = time.time()
                 for iv in range(size):
-                    #Fisher_Matrix = np.zeros((3,3))
+                    Fisher_Matrix = np.zeros((3,3))
                     for ia,vala in enumerate(self.param_Fisher):
                         for jb,valb in enumerate(self.param_Fisher):
                             if jb >= ia:
-                                #Fisher_Matrix[ia,jb] = parts[ia,jb][iv]
-                                Fisher_Big[ia+3*iv][jb+3*iv] = parts[ia,jb][iv]
-                    #Fisher_Matrix = np.maximum(Fisher_Matrix, Fisher_Matrix.transpose())
+                                Fisher_Matrix[ia,jb] = parts[ia,jb][iv]
+                                #Fisher_Big[ia+3*iv][jb+3*iv] = parts[ia,jb][iv]
+                    Fisher_Matrix = np.maximum(Fisher_Matrix, Fisher_Matrix.transpose())
+                    print(Fisher_Matrix)
+                    Inv_Diag = np.diag(np.linalg.inv(Fisher_Matrix))
+                    print('inv',Inv_Diag)
+                    for ia,vala in enumerate(self.param_Fisher):
+                        #Big_Diag[ia+3*iv][ia+3*iv] = Inv_Diag[ia]
+                        Big_Diag.append(Inv_Diag[ia])
                     #print('ici',Fisher_Matrix)
-                
-                Fisher_Big = np.maximum(Fisher_Big, Fisher_Big.transpose())
+                print('Big Diag',Big_Diag)
+                #Fisher_Big = np.maximum(Fisher_Big, Fisher_Big.transpose())
                 #plt.imshow(Fisher_Big)
                 #plt.show()
-                print('Summ',Fisher_Big.shape,Fisher_Big[:10][:])
+                #print('Summ',Fisher_Big.shape,Fisher_Big[:10][:])
                 print('there three',time.time()-time_refa)
                 #from IPython import embed
                 time_refa = time.time()
                 #embed()
-                Big_Diag = np.linalg.inv(Fisher_Big)
+                #Big_Diag = np.linalg.inv(Fisher_Big)
                 #np.linalg.cholesky(Fisher_Big)
                 #M,invM = self.invert_matrix(Fisher_Big)
                 #Big_Diag = np.diag(invM)
@@ -353,7 +368,7 @@ class SN(SN_Object):
                 #print('Diag',np.diag(np.linalg.inv(Fisher_Big)))
                 for ia,vala in enumerate(self.param_Fisher):
                     indices = range(ia,len(Big_Diag),3)
-                    #print('test',ia,vala,np.take(Big_Diag,indices))
+                    print('test',ia,indices,vala,np.take(Big_Diag,indices))
                     restab_loc.add_column(Column(np.sqrt(np.take(Big_Diag,indices)),name='sigma_'+vala))
                     
                 restab = vstack([restab,restab_loc])
@@ -383,7 +398,7 @@ class SN(SN_Object):
     def Plot_Sigma_c(self, tab):
 
         import pylab as plt
-        season = 3
+        season = 1
 
         idx = tab['season'] == season
         sel = tab[idx]
