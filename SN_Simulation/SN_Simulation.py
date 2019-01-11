@@ -35,7 +35,6 @@ class SN_Simulation:
     - Finish:
     Summary of production (hdf5)
     """
-
     def __init__(self, cosmo_par, tel_par, sn_parameters,
                  save_status, outdir, prodid,
                  simu_config, display_lc,time_display,area,
@@ -109,6 +108,7 @@ class SN_Simulation:
         else:
             seasons = [season]
         print('number of seasons',len(seasons))
+        
         if self.simu_config['name'] != 'SN_Fast':
             for seas in seasons:
                 time_ref = time.time()
@@ -117,9 +117,12 @@ class SN_Simulation:
                 # remove the u band
                 idx = [i for i, val in enumerate(obs_season[self.filterCol]) if val[-1] != 'u']
                 if len(obs_season[idx]) > 0:
-                    self.Process_Season(obs_season[idx], seas)
+                    if self.simu_config['name'] != 'SN_Fast':
+                        self.Process_Season(obs_season[idx], seas)
         else:
-            self.Process_Fast(obs)
+            time_ref = time.time()
+            self.Process_Fast(obs,fieldname,fieldid) 
+           
         print('End of simulation',time.time()-time_ref)
     """
     def __call__(self, tab,fieldname,fieldid):
@@ -171,6 +174,7 @@ class SN_Simulation:
                     n_lc_points = 0
                     if resultdict[j][0] is not None:
                         n_lc_points = len(resultdict[j][0])
+                        print(type(resultdict[j][0].dtype))
                         resultdict[j][0].write(self.lc_out,
                                             path='lc_'+str(metadata['index_hdf5']),
                                             append=True,
@@ -181,6 +185,7 @@ class SN_Simulation:
                                          metadata['z'], metadata['index_hdf5'], season,
                                          self.fieldname, self.fieldid,
                                          n_lc_points,metadata['survey_area']))
+            
             """
             for i, val in enumerate(gen_params[:]):
             self.index_hdf5 += 1
@@ -218,21 +223,20 @@ class SN_Simulation:
                          'n_lc_points','survey_area'],
                   dtype=('i4', 'f8', 'f8', 'f8', 'f8', 'f8',
                          'f8', 'i4', 'i4','S3','i8','i8','f8')).write(
-                             self.simu_out, 'summary', compression=True)
+                             self.simu_out, 'summary',compression=True)
 
-    def Process_Fast(self, obs):
+    def Process_Fast(self, obs, fieldname, fieldid):
         
+        gen_params = self.gen_par(obs)
+
         sn_par = self.sn_parameters.copy()
-        """
         for name in ['z', 'X1', 'Color', 'DayMax']:
             sn_par[name] = gen_params[name]
-        """
-        gen_params = self.gen_par(obs)
-        SNID = sn_par['Id']+self.index_hdf5
+        
         sn_object = SN_Object(self.simu_config['name'],
                               gen_params,
                               self.cosmology,
-                              self.telescope, SNID,self.area,
+                              self.telescope, sn_par['Id'],self.area,
                               mjdCol=self.mjdCol, RaCol=self.RaCol,
                               DecCol= self.DecCol, 
                               filterCol=self.filterCol, exptimeCol=self.exptimeCol,
@@ -240,5 +244,26 @@ class SN_Simulation:
         
         module = import_module(self.simu_config['name'])
         simu = module.SN(sn_object, self.simu_config)
-        simu(obs, self.index_hdf5,self.display_lc,self.time_display,gen_params)
+        ra, dec, tab = simu(obs, self.index_hdf5,self.display_lc,self.time_display,gen_params)
         
+        index_hdf5 = self.index_hdf5
+        
+        if self.save_status and tab is not None:
+            for season in np.unique(tab['season']):
+                for z in np.unique(tab['z']):
+                    idx = tab['season'] == season
+                    idx &= np.abs(tab['z']-z)<1.e-5
+                    sel = tab[idx]
+                    index_hdf5+=1
+                    SNID = sn_par['Id']+index_hdf5
+                    print('hello index',index_hdf5,np.unique(sel['DayMax']))
+                    self.sn_meta.append((SNID, ra, dec,-1,np.asscalar(np.unique(sn_par['X1'])),np.asscalar(np.unique(sn_par['Color'])),
+                                     z, index_hdf5,season,fieldname,fieldid,len(sel),self.area))
+                    
+                    sel.write(self.lc_out,
+                              path='lc_'+str(ra)+'_'+str(dec)+'_'+str(index_hdf5),
+                              #path = 'lc_'+key[0],
+                              append=True,
+                              compression=True)
+                    
+            

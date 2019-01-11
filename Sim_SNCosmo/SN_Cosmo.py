@@ -172,7 +172,7 @@ class SN(SN_Object):
                                      photParams=photParams[i]) /
                      obs[self.exptimeCol][i]*photParams[i].gain for i in nvals]
         """
-        e_per_sec = self.telescope.mag_to_flux_e_sec(mag_SN,obs[self.filterCol])
+        e_per_sec = self.telescope.mag_to_flux_e_sec(mag_SN,obs[self.filterCol],[30.]*len(mag_SN))
         #print(e_per_sec,e_per_sec_b)
         # table_lc=Table(obs)
       

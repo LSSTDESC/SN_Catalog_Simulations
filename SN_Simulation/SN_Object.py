@@ -120,6 +120,7 @@ class SN_Object:
                   t0=DayMax,
                   #x0=self.X0,
                   x1=np.unique(self.sn_parameters['X1']))
+        """
         print('tests',isinstance(table, np.ndarray),isinstance(table,Table),isinstance(table,dict))
         array_tab = np.asarray(table)
         print(array_tab.dtype)
@@ -141,7 +142,10 @@ class SN_Object:
         new_data = table[orig_colnames_to_use].copy()
         print('bbbb',orig_colnames_to_use,_photdata_aliases.keys(),new_data.dtype.names)
         new_data.dtype.names = _photdata_aliases.keys()
-
+        """
+        print(table['band'])
+        for vat in table['band']:
+            print('oo',vat,'oo')
         sncosmo.plot_lc(data=table, model=model)
         
         plt.draw()
