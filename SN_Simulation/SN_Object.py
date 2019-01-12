@@ -11,7 +11,7 @@ class SN_Object:
     necessary parameters for simulation
     SN classes inherit from SN_Object
     """
-    def __init__(self, name, sn_parameters, cosmology,
+    def __init__(self, name, sn_parameters, gen_parameters,cosmology,
                  Telescope, snid,area,
                  mjdCol='mjd', RaCol = 'pixRa', DecCol = 'pixDec',
                  filterCol='band', exptimeCol = 'exptime',
@@ -19,6 +19,7 @@ class SN_Object:
         
         self._name = name
         self._sn_parameters = sn_parameters
+        self._gen_parameters = gen_parameters
         self._cosmology = cosmology
         self._telescope = Telescope
         self._SNID = snid
@@ -39,6 +40,10 @@ class SN_Object:
     @property
     def sn_parameters(self):
         return self._sn_parameters
+
+    @property
+    def gen_parameters(self):
+        return self._gen_parameters
 
     @property
     def cosmology(self):

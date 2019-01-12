@@ -27,7 +27,7 @@ class SN(SN_Object):
     """
 
     def __init__(self, param, simu_param):
-        super().__init__(param.name, param.sn_parameters,
+        super().__init__(param.name, param.sn_parameters,param.gen_parameters,
                          param.cosmology, param.telescope, param.SNID,param.area,
                          mjdCol=param.mjdCol, RaCol=param.RaCol, DecCol=param.DecCol,
                          filterCol=param.filterCol, exptimeCol=param.exptimeCol,
@@ -65,8 +65,8 @@ class SN(SN_Object):
 
         self.SN.set(z=self.sn_parameters['z'])
         self.SN.set(t0=self.sn_parameters['DayMax'])
-        self.SN.set(c=self.sn_parameters['Color'])
-        self.SN.set(x1=self.sn_parameters['X1'])
+        self.SN.set(c=self.sn_parameters['Color']+self.gen_parameters['epsilon_Color'])
+        self.SN.set(x1=self.sn_parameters['X1']+self.gen_parameters['epsilon_X1'])
         # need to correct X0 for alpha and beta
         lumidist = self.cosmology.luminosity_distance(
             self.sn_parameters['z']).value*1.e3
@@ -76,7 +76,7 @@ class SN(SN_Object):
         X0 *= np.power(10., 0.4*(alpha *
                                  self.sn_parameters['X1'] - beta *
                                  self.sn_parameters['Color']))
-
+        X0 += self.gen_parameters['epsilon_X0']
         self.X0 = X0
         self.SN.set(x0=X0)
         """
@@ -107,9 +107,9 @@ class SN(SN_Object):
         area = self.area
 
         metadata = dict(zip(['SNID', 'Ra', 'Dec',
-                                  'DayMax', 'X1', 'Color', 'z','survey_area','index_hdf5'], [
+                                  'DayMax', 'X0','epsilon_X0','X1', 'epsilon_X1','Color', 'epsilon_Color','z','survey_area','index_hdf5'], [
                                       self.SNID, ra, dec, self.sn_parameters['DayMax'],
-                                      self.sn_parameters['X1'], self.sn_parameters['Color'],
+                                      self.X0, self.gen_parameters['epsilon_X0'],self.sn_parameters['X1'], self.gen_parameters['epsilon_X1'],self.sn_parameters['Color'],self.gen_parameters['epsilon_Color'],
                                       self.sn_parameters['z'], area, index_hdf5]))
         
         # print('Simulating SNID', self.SNID)

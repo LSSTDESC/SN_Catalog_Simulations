@@ -153,14 +153,14 @@ class SN(SN_Object):
         time_ref = time.time()
         """
         #self.Save(tab_tot)
-        
+        """
         time_ref = time.time()
         LC_Summary = self.Ana_LC(tab_tot)
         print('after Ana',time.time()-time_ref)
 
         print(LC_Summary)
         self.Plot_Sigma_c(LC_Summary)
-        
+        """
         
         if display:
             season = 1
@@ -174,7 +174,7 @@ class SN(SN_Object):
 
     def Process_band(self,sel_obs,band,gen_par,j=-1,output_q=None):
         
-        method = 'nearest'
+        method = 'linear'
         if len(sel_obs) == 0:
             if output_q is not None:
                 output_q.put({j : None})
@@ -184,13 +184,15 @@ class SN(SN_Object):
         # Get the fluxes (from griddata reference)
         xi = sel_obs[self.mjdCol]-gen_par['DayMax'][:,np.newaxis]
         yi = gen_par['z'][:,np.newaxis]
+        p = xi/(1.+yi) #phases of LC points
+        print('bobobo',self.lc_ref[band].dtype)
         x = self.lc_ref[band]['time']
         y = self.lc_ref[band]['z']
         z = self.lc_ref[band]['flux']
         zb=self.lc_ref[band]['fluxerr']
         fluxes_obs = griddata((x,y),z,(xi, yi), method=method)
         fluxes_obs_err=griddata((x,y),zb,(xi, yi), method=method)
-        p = xi/(1.+yi) #phases of LC points
+       
 
         # Estimate elements to compute Fisher matrices
 

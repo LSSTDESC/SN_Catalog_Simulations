@@ -186,7 +186,9 @@ class SN_Simulation:
                                             compression=True)
                     self.sn_meta.append((metadata['SNID'], metadata['Ra'],
                                          metadata['Dec'], metadata['DayMax'],
-                                         metadata['X1'], metadata['Color'],
+                                         metadata['X0'],metadata['epsilon_X0'],
+                                         metadata['X1'],metadata['epsilon_X1'],
+                                         metadata['Color'],metadata['epsilon_Color'],
                                          metadata['z'], metadata['index_hdf5'], season,
                                          self.fieldname, self.fieldid,
                                          n_lc_points,metadata['survey_area']))
@@ -203,6 +205,7 @@ class SN_Simulation:
         SNID = sn_par['Id']+index_hdf5
         sn_object = SN_Object(self.simu_config['name'],
                               sn_par,
+                              gen_params,
                               self.cosmology,
                               self.telescope, SNID,self.area,
                               mjdCol=self.mjdCol, RaCol=self.RaCol,
@@ -222,8 +225,10 @@ class SN_Simulation:
     def Finish(self):
         if len(self.sn_meta) > 0:
             Table(rows=self.sn_meta,
-                  names=['SNID', 'Ra', 'Dec', 'DayMax', 'X1',
-                         'Color', 'z', 'id_hdf5', 'season',
+                  names=['SNID', 'Ra', 'Dec', 'DayMax', 'X0','epsilon_X0',
+                         'X1','epsilon_X1',
+                         'Color','epsilon_Color',
+                         'z', 'id_hdf5', 'season',
                          'fieldname','fieldid',
                          'n_lc_points','survey_area'],
                   dtype=('i4', 'f8', 'f8', 'f8', 'f8', 'f8',
