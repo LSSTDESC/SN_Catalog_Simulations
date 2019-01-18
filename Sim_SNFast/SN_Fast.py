@@ -30,7 +30,7 @@ class SN(SN_Object):
 
     """
     def __init__(self, param, simu_param):
-        super().__init__(param.name, param.sn_parameters,
+        super().__init__(param.name, param.sn_parameters,param.gen_parameters,
                          param.cosmology, param.telescope, param.SNID,param.area,
                          mjdCol=param.mjdCol, RaCol=param.RaCol, DecCol=param.DecCol,
                          filterCol=param.filterCol, exptimeCol=param.exptimeCol,
@@ -60,9 +60,9 @@ class SN(SN_Object):
         self.param_Fisher = ['X0','X1','Color']
         bands = np.unique(lc_ref_tot['band'])
         mag_range = np.arange(14.,32.,0.1)
+        print('bands',bands)
         for band in bands:
-            
-            idx = lc_ref_tot['band']==band
+            idx = lc_ref_tot['band']== band
             lc_sel=lc_ref_tot[idx]
             #print('hello',lc_sel.dtype)
             self.lc_ref[band] = lc_sel
@@ -70,7 +70,6 @@ class SN(SN_Object):
             self.m5_ref[band]=np.unique(lc_sel['m5'])[0]
             fluxes_e_sec = self.telescope.mag_to_flux_e_sec(mag_range,[band]*len(mag_range),[30]*len(mag_range))
             self.mag_to_flux_e_sec[band] = interpolate.interp1d(mag_range,fluxes_e_sec[:,1],fill_value = 0., bounds_error = False)
-
     
     def __call__(self, obs, index_hdf5,display=False, time_display=0.,gen_par=None):
         """ Simulation of the light curve
@@ -94,14 +93,15 @@ class SN(SN_Object):
         self.index_hdf5 = index_hdf5
         
         # print('Simulating SNID', self.SNID)
-        print('sn params',self.sn_parameters.dtype,self.sn_parameters['DayMax'],self.sn_parameters['z'],gen_par.dtype)
+        #print('hh',gen_par,type(gen_par))
+        #print('sn params',self.sn_parameters.dtype,self.sn_parameters['DayMax'],self.sn_parameters['z'],gen_par.dtype)
        
         if len(obs) == 0:
             return ra,dec,None
 
         result_queue = multiprocessing.Queue()
         bands = 'grizy'
-        #bands = 'i'
+        #bands = 'g'
         
         for j,band in enumerate(bands):
             idx = obs[self.filterCol] == band
@@ -174,7 +174,7 @@ class SN(SN_Object):
 
     def Process_band(self,sel_obs,band,gen_par,j=-1,output_q=None):
         
-        method = 'linear'
+        method = 'cubic'
         if len(sel_obs) == 0:
             if output_q is not None:
                 output_q.put({j : None})
@@ -182,24 +182,36 @@ class SN(SN_Object):
                 return None
 
         # Get the fluxes (from griddata reference)
+        
         xi = sel_obs[self.mjdCol]-gen_par['DayMax'][:,np.newaxis]
-        yi = gen_par['z'][:,np.newaxis]
-        p = xi/(1.+yi) #phases of LC points
-        print('bobobo',self.lc_ref[band].dtype)
-        x = self.lc_ref[band]['time']
+        yi = gen_par['z']
+        p = xi/(1.+yi[:,np.newaxis]) #phases of LC points
+        x = self.lc_ref[band]['time']-self.lc_ref[band]['DayMax']
         y = self.lc_ref[band]['z']
         z = self.lc_ref[band]['flux']
         zb=self.lc_ref[band]['fluxerr']
-        fluxes_obs = griddata((x,y),z,(xi, yi), method=method)
-        fluxes_obs_err=griddata((x,y),zb,(xi, yi), method=method)
-       
 
+        """
+        
+        sc = plt.scatter(x,y,c=z,cmap='jet')
+        plt.colorbar(sc)
+        plt.title(band)
+        #plt.pcolor(x, y, z, cmap='jet', vmin=abs(z).min(), vmax=abs(z).max())
+        plt.show()
+        """
+        yi_arr = np.ones_like(xi)*yi[:,np.newaxis]
+       
+        #print(yi_arr)
+        fluxes_obs = griddata((x,y),z,(xi, yi_arr), method=method,fill_value=0.)
+        fluxes_obs_err=griddata((x,y),zb,(xi, yi_arr), method=method,fill_value=0.)
+
+        #print(r)
         # Estimate elements to compute Fisher matrices
 
         dFlux = {}
         for val in self.param_Fisher:
             z_c = self.lc_ref[band]['d'+val]
-            dFlux[val] = griddata((x,y),z_c,(xi, yi), method=method)
+            dFlux[val] = griddata((x,y),z_c,(xi, yi_arr), method=method,fill_value=0.)
             
         Derivative_for_Fisher = {}
         for ia,vala in enumerate(self.param_Fisher):
@@ -213,7 +225,6 @@ class SN(SN_Object):
         # remove LC points outside the restframe phase range
         min_rf_phase = gen_par['min_rf_phase'][:,np.newaxis]
         max_rf_phase = gen_par['max_rf_phase'][:,np.newaxis]
-        print('phases min and max',gen_par['min_rf_phase'],gen_par['max_rf_phase'])
         flag = (p >= min_rf_phase) & (p <= max_rf_phase)
         
         # remove LC points outside the (blue-red) range
@@ -241,6 +252,8 @@ class SN(SN_Object):
         seasons = np.ma.array(np.tile(sel_obs[self.seasonCol],(len(mag_obs),1)),mask=~flag)
         z_vals = gen_par['z'][flag_idx[:,0]]
         DayMax_vals = gen_par['DayMax'][flag_idx[:,0]]
+        #print('hhh', DayMax_vals)
+        #print(r)
         mag_obs = np.ma.array(mag_obs,mask=~flag)
         Fisher_Mat = {}
         for key,vals in Derivative_for_Fisher.items():
@@ -936,38 +949,40 @@ class Load_Reference:
         """
         f = h5py.File(self.fi,'r')
         keys=f.keys()
-
+        zvals = np.arange(0.01,0.9,0.01)
         zvals_arr = np.array(zvals)
         
         for kk in keys:
             
             tab_b=Table.read(self.fi, path=kk)
-            #print('hello key',kk,np.unique(tab_b['z']))
+            #tab_tot=vstack([tab_tot,tab_b])
+            
             if tab_b is not None:
                 diff = tab_b['z']-zvals_arr[:,np.newaxis]
                 #flag = np.abs(diff)<1.e-3
                 flag_idx = np.where(np.abs(diff)<1.e-3)
                 if len(flag_idx[1]) > 0:
                     tab_tot=vstack([tab_tot,tab_b[flag_idx[1]]])
-                """
-                print(flag,flag_idx[1])
-                print('there man',tab_b[flag_idx[1]])
-                mtile = np.tile(tab_b['z'],(len(zvals),1))
-                #print('mtile',mtile*flag)
-                
-                masked_array = np.ma.array(mtile,mask=~flag)
-                
-                print('resu masked',masked_array,masked_array.shape)
-                print('hhh',masked_array[~masked_array.mask])
-                
             
-                for val in zvals:
-                    print('hello',tab_b[['band','z','time']],'and',val)
-                    if np.abs(np.unique(tab_b['z'])-val)<0.01:
-                        #print('loading ref',np.unique(tab_b['z']))
-                        tab_tot=vstack([tab_tot,tab_b])
-                        break
-                """
+            """
+            print(flag,flag_idx[1])
+            print('there man',tab_b[flag_idx[1]])
+            mtile = np.tile(tab_b['z'],(len(zvals),1))
+            #print('mtile',mtile*flag)
+                
+            masked_array = np.ma.array(mtile,mask=~flag)
+            
+            print('resu masked',masked_array,masked_array.shape)
+            print('hhh',masked_array[~masked_array.mask])
+            
+            
+        for val in zvals:
+            print('hello',tab_b[['band','z','time']],'and',val)
+            if np.abs(np.unique(tab_b['z'])-val)<0.01:
+            #print('loading ref',np.unique(tab_b['z']))
+            tab_tot=vstack([tab_tot,tab_b])
+            break
+            """
         if output_q is not None:
             output_q.put({j : tab_tot})
         else:

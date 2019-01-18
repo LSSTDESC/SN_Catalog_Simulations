@@ -57,12 +57,13 @@ class SN(SN_Object):
         self.dustmap = sncosmo.OD94Dust()
 
         self.lsstmwebv = EBV.EBVbase()
-        
+        """
         self.SN = sncosmo.Model(source=source,
                                 effects=[self.dustmap, self.dustmap],
                                 effect_names=['host', 'mw'],
                                 effect_frames=['rest', 'obs'])
-
+        """
+        self.SN = sncosmo.Model(source=source)
         self.SN.set(z=self.sn_parameters['z'])
         self.SN.set(t0=self.sn_parameters['DayMax'])
         self.SN.set(c=self.sn_parameters['Color']+self.gen_parameters['epsilon_Color'])
@@ -133,12 +134,13 @@ class SN(SN_Object):
 
         obs.sort(order=self.mjdCol)
        
-        # apply dust here since Ra, Dec is known                                                                           
+        # apply dust here since Ra, Dec is known
+        """
         ebvofMW = self.lsstmwebv.calculateEbv(                                                           
             equatorialCoordinates=np.array(
                 [[ra], [dec]]))[0]
         self.SN.set(mwebv = ebvofMW)
-        
+        """
         fluxes = 10.*self.SN.flux(obs[self.mjdCol], self.wave)
 
         wavelength = self.wave/10.
@@ -170,7 +172,7 @@ class SN(SN_Object):
             mag_SN[i], transes[i], obs[self.m5Col][i],
             photParams[i]) for i in nvals]
         snr_m5_opsim = [calc[i][0] for i in nvals]
-        # gamma_opsim=[calc[i][1] for i in nvals]
+        gamma_opsim=[calc[i][1] for i in nvals]
         """
         e_per_sec = [seds[i].calcADU(bandpass=transes[i],
                                      photParams=photParams[i]) /
@@ -184,6 +186,8 @@ class SN(SN_Object):
         table_lc.add_column(Column(fluxes, name='flux'))
         table_lc.add_column(Column(fluxes/snr_m5_opsim, name='fluxerr'))
         table_lc.add_column(Column(snr_m5_opsim, name='snr_m5'))
+        table_lc.add_column(Column(gamma_opsim, name='gamma'))
+        table_lc.add_column(Column(obs[self.m5Col], name='m5'))
         table_lc.add_column(Column(e_per_sec[:,1], name='flux_e'))
         table_lc.add_column(Column(mag_SN, name='mag'))
         table_lc.add_column(Column((2.5/np.log(10.))/snr_m5_opsim, name='magerr'))
@@ -200,8 +204,9 @@ class SN(SN_Object):
                    dtype=h5py.special_dtype(vlen=str)))
         table_lc.add_column(Column(obs[self.mjdCol], name='time'))
 
-        idx = table_lc['flux'] >= 0.
-        table_lc = table_lc[idx]
+        
+        #idx = table_lc['flux'] >= 0.
+        #table_lc = table_lc[idx]
         
         # print(table_lc.dtype,table_lc['band'])
         if display:

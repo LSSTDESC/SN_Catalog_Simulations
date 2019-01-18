@@ -223,6 +223,7 @@ class SN_Simulation:
 
            
     def Finish(self):
+        print(self.sn_meta)
         if len(self.sn_meta) > 0:
             Table(rows=self.sn_meta,
                   names=['SNID', 'Ra', 'Dec', 'DayMax', 'X0','epsilon_X0',
@@ -231,7 +232,7 @@ class SN_Simulation:
                          'z', 'id_hdf5', 'season',
                          'fieldname','fieldid',
                          'n_lc_points','survey_area'],
-                  dtype=('i4', 'f8', 'f8', 'f8', 'f8', 'f8',
+                  dtype=('i4', 'f8', 'f8', 'f8','f8','f8','f8','f8', 'f8', 'f8',
                          'f8', 'i4', 'i4','S3','i8','i8','f8')).write(
                              self.simu_out, 'summary',compression=True)
 
@@ -239,11 +240,18 @@ class SN_Simulation:
         
         gen_params = self.gen_par(obs)
 
+        #print('genpar',gen_params)
         sn_par = self.sn_parameters.copy()
         for name in ['z', 'X1', 'Color', 'DayMax']:
             sn_par[name] = gen_params[name]
-        
+
+        epsilon={}
+
+        for val in ['X0','X1','Color']:
+            epsilon[val] = np.asscalar(np.unique(gen_params['epsilon_'+val]))
+            
         sn_object = SN_Object(self.simu_config['name'],
+                              sn_par,
                               gen_params,
                               self.cosmology,
                               self.telescope, sn_par['Id'],self.area,
@@ -267,8 +275,15 @@ class SN_Simulation:
                     index_hdf5+=1
                     SNID = sn_par['Id']+index_hdf5
                     print('hello index',season,index_hdf5,np.unique(sel['DayMax']))
-                    self.sn_meta.append((SNID, ra, dec,-1,np.asscalar(np.unique(sn_par['X1'])),np.asscalar(np.unique(sn_par['Color'])),
-                                     z, index_hdf5,season,fieldname,fieldid,len(sel),self.area))
+                    self.sn_meta.append((SNID, ra, dec,-1,
+                                         -1.,
+                                         epsilon['X0'],
+                                         np.asscalar(np.unique(sn_par['X1'])),
+                                         epsilon['X1'],
+                                         np.asscalar(np.unique(sn_par['Color'])),
+                                         epsilon['Color'],
+                                         z, index_hdf5,season,fieldname,fieldid,len(sel),self.area))
+
                     
                     sel.write(self.lc_out,
                               path='lc_'+str(ra)+'_'+str(dec)+'_'+str(index_hdf5),
