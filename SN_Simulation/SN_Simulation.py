@@ -240,6 +240,8 @@ class SN_Simulation:
         
         gen_params = self.gen_par(obs)
 
+        if gen_params is None:
+            return
         #print('genpar',gen_params)
         sn_par = self.sn_parameters.copy()
         for name in ['z', 'X1', 'Color', 'DayMax']:

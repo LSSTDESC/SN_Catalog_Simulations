@@ -190,6 +190,8 @@ class SN(SN_Object):
         table_lc.add_column(Column(obs[self.m5Col], name='m5'))
         table_lc.add_column(Column(e_per_sec[:,1], name='flux_e'))
         table_lc.add_column(Column(mag_SN, name='mag'))
+        
+        
         table_lc.add_column(Column((2.5/np.log(10.))/snr_m5_opsim, name='magerr'))
         table_lc.add_column(
             Column(['LSST::'+obs[self.filterCol][i][-1]
@@ -203,8 +205,8 @@ class SN(SN_Object):
             Column(['ab']*len(obs), name='zpsys',
                    dtype=h5py.special_dtype(vlen=str)))
         table_lc.add_column(Column(obs[self.mjdCol], name='time'))
-
-        
+        phases = (table_lc['time']-self.sn_parameters['DayMax'])/(1.+self.sn_parameters['z'])
+        table_lc.add_column(Column(phases, name='phase'))
         #idx = table_lc['flux'] >= 0.
         #table_lc = table_lc[idx]
         
