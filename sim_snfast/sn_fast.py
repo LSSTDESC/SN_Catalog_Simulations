@@ -11,9 +11,9 @@ import multiprocessing
 from optparse import OptionParser
 import os
 from scipy.interpolate import griddata
-from SN_Object import SN_Object
 import numpy.lib.recfunctions as rf
 import scipy.linalg.lapack as lapack
+from SN_Catalog_Simulation.sn_simulation.sn_object import SN_Object
 #from scipy.sparse import coo_matrix, block_diag,csc_matrix
 #from scipy.linalg import pinvh
 

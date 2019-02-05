@@ -1,5 +1,4 @@
 import sncosmo
-from SN_Object import SN_Object
 import numpy as np
 from lsst.sims.photUtils import Bandpass, Sed
 from lsst.sims.photUtils import SignalToNoise
@@ -8,10 +7,13 @@ from astropy.table import vstack, Table, Column
 import matplotlib.animation as manimation
 import pylab as plt
 import os
-from SN_Throughputs import Throughputs
 from scipy import interpolate, integrate
 import h5py
 from lsst.sims.catUtils.dust import EBV
+
+from SN_Catalogs_Simulations.sn_simulation.sn_object import SN_Object
+from sn_utils.utils.sn_throughputs import Throughputs
+
 
 class SN(SN_Object):
     """ SN class - inherits from SN_Object
@@ -27,8 +29,8 @@ class SN(SN_Object):
     """
 
     def __init__(self, param, simu_param):
-        super().__init__(param.name, param.sn_parameters,param.gen_parameters,
-                         param.cosmology, param.telescope, param.SNID,param.area,
+        super().__init__(param.name, param.sn_parameters, param.gen_parameters,
+                         param.cosmology, param.telescope, param.SNID, param.area,
                          mjdCol=param.mjdCol, RaCol=param.RaCol, DecCol=param.DecCol,
                          filterCol=param.filterCol, exptimeCol=param.exptimeCol,
                          m5Col=param.m5Col, seasonCol=param.seasonCol)
@@ -66,8 +68,10 @@ class SN(SN_Object):
         self.SN = sncosmo.Model(source=source)
         self.SN.set(z=self.sn_parameters['z'])
         self.SN.set(t0=self.sn_parameters['DayMax'])
-        self.SN.set(c=self.sn_parameters['Color']+self.gen_parameters['epsilon_Color'])
-        self.SN.set(x1=self.sn_parameters['X1']+self.gen_parameters['epsilon_X1'])
+        self.SN.set(c=self.sn_parameters['Color'] +
+                    self.gen_parameters['epsilon_Color'])
+        self.SN.set(x1=self.sn_parameters['X1'] +
+                    self.gen_parameters['epsilon_X1'])
         # need to correct X0 for alpha and beta
         lumidist = self.cosmology.luminosity_distance(
             self.sn_parameters['z']).value*1.e3
@@ -87,7 +91,7 @@ class SN(SN_Object):
         self.X0=self.SN.get('x0')
         """
 
-    def __call__(self, obs, index_hdf5,display=False, time_display=0.):
+    def __call__(self, obs, index_hdf5, display=False, time_display=0.):
         """ Simulation of the light curve
 
         Input
@@ -108,11 +112,12 @@ class SN(SN_Object):
         area = self.area
 
         metadata = dict(zip(['SNID', 'Ra', 'Dec',
-                                  'DayMax', 'X0','epsilon_X0','X1', 'epsilon_X1','Color', 'epsilon_Color','z','survey_area','index_hdf5'], [
-                                      self.SNID, ra, dec, self.sn_parameters['DayMax'],
-                                      self.X0, self.gen_parameters['epsilon_X0'],self.sn_parameters['X1'], self.gen_parameters['epsilon_X1'],self.sn_parameters['Color'],self.gen_parameters['epsilon_Color'],
-                                      self.sn_parameters['z'], area, index_hdf5]))
-        
+                             'DayMax', 'X0', 'epsilon_X0', 'X1', 'epsilon_X1', 'Color', 'epsilon_Color', 'z', 'survey_area', 'index_hdf5'], [
+            self.SNID, ra, dec, self.sn_parameters['DayMax'],
+            self.X0, self.gen_parameters['epsilon_X0'], self.sn_parameters['X1'], self.gen_parameters[
+                'epsilon_X1'], self.sn_parameters['Color'], self.gen_parameters['epsilon_Color'],
+            self.sn_parameters['z'], area, index_hdf5]))
+
         # print('Simulating SNID', self.SNID)
         obs = self.cutoff(obs, self.sn_parameters['DayMax'],
                           self.sn_parameters['z'],
@@ -122,7 +127,7 @@ class SN(SN_Object):
         print('after selection obs')
         for band in 'grizy':
             idb = obs[self.filterCol] == band
-            print(band,len(obs[idb]),obs[idb])
+            print(band, len(obs[idb]), obs[idb])
         if len(obs) == 0:
             return None, metadata
 
@@ -133,7 +138,7 @@ class SN(SN_Object):
         table_lc.meta = metadata
 
         obs.sort(order=self.mjdCol)
-       
+
         # apply dust here since Ra, Dec is known
         """
         ebvofMW = self.lsstmwebv.calculateEbv(                                                           
@@ -154,7 +159,7 @@ class SN(SN_Object):
         seds = [Sed(wavelen=SED_time.wavelen[i], flambda=SED_time.flambda[i])
                 for i in nvals]
         transes = np.asarray([self.telescope.atmosphere[obs[self.filterCol][i][-1]]
-                   for i in nvals])
+                              for i in nvals])
         fluxes = np.asarray(
             [seds[i].calcFlux(bandpass=transes[i]) for i in nvals])
 
@@ -163,7 +168,7 @@ class SN(SN_Object):
         transes = transes[idx]
         obs = obs[idx]
         nvals = range(len(obs))
-        
+
         photParams = [PhotometricParameters(
             nexp=obs[self.exptimeCol][i]/15.) for i in nvals]
         mag_SN = -2.5 * np.log10(fluxes / 3631.0)  # fluxes are in Jy
@@ -172,27 +177,28 @@ class SN(SN_Object):
             mag_SN[i], transes[i], obs[self.m5Col][i],
             photParams[i]) for i in nvals]
         snr_m5_opsim = [calc[i][0] for i in nvals]
-        gamma_opsim=[calc[i][1] for i in nvals]
+        gamma_opsim = [calc[i][1] for i in nvals]
         """
         e_per_sec = [seds[i].calcADU(bandpass=transes[i],
                                      photParams=photParams[i]) /
                      obs[self.exptimeCol][i]*photParams[i].gain for i in nvals]
         """
-        e_per_sec = self.telescope.mag_to_flux_e_sec(mag_SN,obs[self.filterCol],[30.]*len(mag_SN))
-        #print(e_per_sec,e_per_sec_b)
+        e_per_sec = self.telescope.mag_to_flux_e_sec(
+            mag_SN, obs[self.filterCol], [30.]*len(mag_SN))
+        # print(e_per_sec,e_per_sec_b)
         # table_lc=Table(obs)
-      
+
         # table_lc.remove_column('band')
         table_lc.add_column(Column(fluxes, name='flux'))
         table_lc.add_column(Column(fluxes/snr_m5_opsim, name='fluxerr'))
         table_lc.add_column(Column(snr_m5_opsim, name='snr_m5'))
         table_lc.add_column(Column(gamma_opsim, name='gamma'))
         table_lc.add_column(Column(obs[self.m5Col], name='m5'))
-        table_lc.add_column(Column(e_per_sec[:,1], name='flux_e'))
+        table_lc.add_column(Column(e_per_sec[:, 1], name='flux_e'))
         table_lc.add_column(Column(mag_SN, name='mag'))
-        
-        
-        table_lc.add_column(Column((2.5/np.log(10.))/snr_m5_opsim, name='magerr'))
+
+        table_lc.add_column(
+            Column((2.5/np.log(10.))/snr_m5_opsim, name='magerr'))
         table_lc.add_column(
             Column(['LSST::'+obs[self.filterCol][i][-1]
                     for i in range(len(obs[self.filterCol]))], name='band',
@@ -200,24 +206,24 @@ class SN(SN_Object):
         # table_lc.add_column(Column([obs['band'][i][-1]
         # for i in range(len(obs['band']))], name='band'))
         table_lc.add_column(Column([2.5*np.log10(3631)]*len(obs),
-                                    name='zp'))
+                                   name='zp'))
         table_lc.add_column(
             Column(['ab']*len(obs), name='zpsys',
                    dtype=h5py.special_dtype(vlen=str)))
         table_lc.add_column(Column(obs[self.mjdCol], name='time'))
-        phases = (table_lc['time']-self.sn_parameters['DayMax'])/(1.+self.sn_parameters['z'])
+        phases = (table_lc['time']-self.sn_parameters['DayMax']
+                  )/(1.+self.sn_parameters['z'])
         table_lc.add_column(Column(phases, name='phase'))
         #idx = table_lc['flux'] >= 0.
         #table_lc = table_lc[idx]
-        
+
         # print(table_lc.dtype,table_lc['band'])
         if display:
             self.Plot_LC(table_lc['time', 'band',
-                                   'flux', 'fluxerr', 'zp', 'zpsys'], time_display)
+                                  'flux', 'fluxerr', 'zp', 'zpsys'], time_display)
 
         return table_lc, metadata
 
-        
     def X0_norm(self):
         """ Extimate X0 from flux at 10pc
         using Vega spectrum

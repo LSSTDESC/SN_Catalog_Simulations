@@ -1,8 +1,9 @@
-from SN_Telescope import Telescope
+from sn_utils.utils.sn_telescope import Telescope
 import numpy as np
 import astropy.units as u
 from astropy.table import Table
 from collections import OrderedDict as odict
+
 
 class SN_Object:
     """ class SN object
@@ -11,12 +12,13 @@ class SN_Object:
     necessary parameters for simulation
     SN classes inherit from SN_Object
     """
-    def __init__(self, name, sn_parameters, gen_parameters,cosmology,
-                 Telescope, snid,area,
-                 mjdCol='mjd', RaCol = 'pixRa', DecCol = 'pixDec',
-                 filterCol='band', exptimeCol = 'exptime',
-                 m5Col = 'fiveSigmaDepth', seasonCol='season'):
-        
+
+    def __init__(self, name, sn_parameters, gen_parameters, cosmology,
+                 Telescope, snid, area,
+                 mjdCol='mjd', RaCol='pixRa', DecCol='pixDec',
+                 filterCol='band', exptimeCol='exptime',
+                 m5Col='fiveSigmaDepth', seasonCol='season'):
+
         self._name = name
         self._sn_parameters = sn_parameters
         self._gen_parameters = gen_parameters
@@ -86,19 +88,20 @@ class SN_Object:
         idx &= (mean_restframe_wavelength < red_cutoff)
         return obs[idx]
 
-    def Plot_LC(self, table, time_display,z,DayMax,season):
+    def Plot_LC(self, table, time_display, z, DayMax, season):
         import pylab as plt
         import sncosmo
         print('What will be plotted')
         print(table)
         print(self.sn_parameters)
         prefix = 'LSST::'
-        print(table.dtype,len(table))
+        print(table.dtype, len(table))
         _photdata_aliases = odict([
             ('time', set(['time', 'date', 'jd', 'mjd', 'mjdobs', 'mjd_obs'])),
             ('band', set(['band', 'bandpass', 'filter', 'flt'])),
             ('flux', set(['flux', 'f'])),
-            ('fluxerr', set(['fluxerr', 'fe', 'fluxerror', 'flux_error', 'flux_err'])),
+            ('fluxerr', set(
+                ['fluxerr', 'fe', 'fluxerror', 'flux_error', 'flux_err'])),
             ('zp', set(['zp', 'zpt', 'zeropoint', 'zero_point'])),
             ('zpsys', set(['zpsys', 'zpmagsys', 'magsys']))
         ])
@@ -123,7 +126,7 @@ class SN_Object:
         model.set(z=z,
                   c=np.unique(self.sn_parameters['Color']),
                   t0=DayMax,
-                  #x0=self.X0,
+                  # x0=self.X0,
                   x1=np.unique(self.sn_parameters['X1']))
         """
         print('tests',isinstance(table, np.ndarray),isinstance(table,Table),isinstance(table,dict))
@@ -150,10 +153,9 @@ class SN_Object:
         """
         print(table['band'])
         for vat in table['band']:
-            print('oo',vat,'oo')
+            print('oo', vat, 'oo')
         sncosmo.plot_lc(data=table, model=model)
-        
+
         plt.draw()
         plt.pause(time_display)
         plt.close()
-        
