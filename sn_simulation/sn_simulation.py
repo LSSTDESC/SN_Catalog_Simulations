@@ -112,7 +112,6 @@ class SN_Simulation:
             seasons = np.unique(obs[self.seasonCol])
         else:
             seasons = [season]
-        print('number of seasons', len(seasons))
 
         if self.simu_config['name'] != 'SN_Fast':
             for seas in seasons:
@@ -187,7 +186,6 @@ class SN_Simulation:
                     n_lc_points = 0
                     if resultdict[j][0] is not None:
                         n_lc_points = len(resultdict[j][0])
-                        print(type(resultdict[j][0].dtype))
                         resultdict[j][0].write(self.lc_out,
                                                path='lc_' +
                                                str(metadata['index_hdf5']),
@@ -233,7 +231,7 @@ class SN_Simulation:
             output_q.put({j: (lc_table, metadata)})
 
     def Finish(self):
-        print(self.sn_meta)
+
         if len(self.sn_meta) > 0:
             Table(rows=self.sn_meta,
                   names=['SNID', 'Ra', 'Dec', 'DayMax', 'X0', 'epsilon_X0',
@@ -287,8 +285,7 @@ class SN_Simulation:
                     sel = tab[idx]
                     index_hdf5 += 1
                     SNID = sn_par['Id']+index_hdf5
-                    print('hello index', season, index_hdf5,
-                          np.unique(sel['DayMax']))
+
                     self.sn_meta.append((SNID, ra, dec, -1,
                                          -1.,
                                          epsilon['X0'],

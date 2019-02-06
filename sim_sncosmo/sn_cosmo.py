@@ -124,10 +124,8 @@ class SN(SN_Object):
                           self.sn_parameters['min_rf_phase'],
                           self.sn_parameters['max_rf_phase'])
 
-        print('after selection obs')
         for band in 'grizy':
             idb = obs[self.filterCol] == band
-            print(band, len(obs[idb]), obs[idb])
         if len(obs) == 0:
             return None, metadata
 
