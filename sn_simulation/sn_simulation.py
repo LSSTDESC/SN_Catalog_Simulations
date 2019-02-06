@@ -210,6 +210,7 @@ class SN_Simulation:
         sn_par = self.sn_parameters.copy()
         for name in ['z', 'X1', 'Color', 'DayMax']:
             sn_par[name] = gen_params[name]
+
         SNID = sn_par['Id']+index_hdf5
         sn_object = SN_Object(self.simu_config['name'],
                               sn_par,
