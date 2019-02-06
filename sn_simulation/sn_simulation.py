@@ -1,7 +1,6 @@
 
 from astropy.cosmology import w0waCDM
 from importlib import import_module
-from Observations import Observations
 import numpy as np
 import time
 from astropy.table import vstack, Table, Column
@@ -10,8 +9,9 @@ import h5py
 import multiprocessing
 
 from sn_utils.utils.sn_telescope import Telescope
-from SN_Catalog_Simulations.sn_simulation.sn_object import SN_Object
+from sn_catalog_simulations.sn_simulation.sn_object import SN_Object
 from sn_utils.utils.sn_utils import Generate_Sample
+from sn_utils.utils.observations import Observations
 
 
 class SN_Simulation:

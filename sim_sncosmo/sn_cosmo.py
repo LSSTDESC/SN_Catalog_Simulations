@@ -11,7 +11,7 @@ from scipy import interpolate, integrate
 import h5py
 from lsst.sims.catUtils.dust import EBV
 
-from SN_Catalogs_Simulations.sn_simulation.sn_object import SN_Object
+from sn_catalog_simulations.sn_simulation.sn_object import SN_Object
 from sn_utils.utils.sn_throughputs import Throughputs
 
 
@@ -178,6 +178,7 @@ class SN(SN_Object):
             photParams[i]) for i in nvals]
         snr_m5_opsim = [calc[i][0] for i in nvals]
         gamma_opsim = [calc[i][1] for i in nvals]
+        exptime = [obs[self.exptimeCol][i] for i in nvals]
         """
         e_per_sec = [seds[i].calcADU(bandpass=transes[i],
                                      photParams=photParams[i]) /
@@ -196,6 +197,7 @@ class SN(SN_Object):
         table_lc.add_column(Column(obs[self.m5Col], name='m5'))
         table_lc.add_column(Column(e_per_sec[:, 1], name='flux_e'))
         table_lc.add_column(Column(mag_SN, name='mag'))
+        table_lc.add_column(Column(exptime, name='exptime'))
 
         table_lc.add_column(
             Column((2.5/np.log(10.))/snr_m5_opsim, name='magerr'))
