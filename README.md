@@ -8,10 +8,10 @@ To run the simulation:
 
 - use the dev branch (for now)
   - cd SN_Catalog_Simulations ; git checkout dev
-  - cd SN_Utils ; git checkout dev
+  - cd SN_Utils ; git checkout dev_stable
 
 - cd ../SN_Catalog_Simulations
 - source setups/setup.sh
-- python SN_Simulation/sn_simulation.py input/param.yaml
+- python sn_simulation/sn_simulation.py input/param.yaml
 
 N.B: This software needs lsst_sim. It is currently running @NERSC with w.2018.19_sim2.8.0.
