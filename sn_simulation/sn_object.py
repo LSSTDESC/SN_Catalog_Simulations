@@ -17,7 +17,8 @@ class SN_Object:
                  Telescope, snid, area,
                  mjdCol='mjd', RaCol='pixRa', DecCol='pixDec',
                  filterCol='band', exptimeCol='exptime',
-                 m5Col='fiveSigmaDepth', seasonCol='season'):
+                 m5Col='fiveSigmaDepth', seasonCol='season',
+                 seeingEffCol='seeingFwhmEff', seeingGeomCol='seeingFwhmGeom'):
 
         self._name = name
         self._sn_parameters = sn_parameters
@@ -33,6 +34,8 @@ class SN_Object:
         self.exptimeCol = exptimeCol
         self.m5Col = m5Col
         self.seasonCol = seasonCol
+        self.seeingEffCol = seeingEffCol
+        self.seeingGeomCol = seeingGeomCol
         self.area = area
 
     @property

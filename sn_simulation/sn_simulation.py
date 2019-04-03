@@ -45,6 +45,7 @@ class SN_Simulation:
                  mjdCol='mjd', RaCol='pixRa', DecCol='pixDec',
                  filterCol='band', exptimeCol='exptime',
                  m5Col='fiveSigmaDepth', seasonCol='season',
+                 seeingEffCol='seeingFwhmEff', seeingGeomCol='seeingFwhmGeom',
                  nproc=1):
 
         # self.cosmo_par = cosmo_par
@@ -61,6 +62,8 @@ class SN_Simulation:
         self.exptimeCol = exptimeCol
         self.m5Col = m5Col
         self.seasonCol = seasonCol
+        self.seeingEffCol = seeingEffCol
+        self.seeingGeomCol = seeingGeomCol
         self.nproc = nproc
         self.area = area
         self.gen_par = Generate_Sample(sn_parameters, cosmo_par, mjdCol=self.mjdCol, area=self.area,

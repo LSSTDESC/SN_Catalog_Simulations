@@ -33,7 +33,8 @@ class SN(SN_Object):
                          param.cosmology, param.telescope, param.SNID, param.area,
                          mjdCol=param.mjdCol, RaCol=param.RaCol, DecCol=param.DecCol,
                          filterCol=param.filterCol, exptimeCol=param.exptimeCol,
-                         m5Col=param.m5Col, seasonCol=param.seasonCol)
+                         m5Col=param.m5Col, seasonCol=param.seasonCol,
+                         seeingEffCol=param.seeingEffCol, seeingGeomCol=param.seeingGeomCol)
 
         model = simu_param['model']
         version = str(simu_param['version'])
@@ -193,6 +194,10 @@ class SN(SN_Object):
         table_lc.add_column(Column(snr_m5_opsim, name='snr_m5'))
         table_lc.add_column(Column(gamma_opsim, name='gamma'))
         table_lc.add_column(Column(obs[self.m5Col], name='m5'))
+        table_lc.add_column(
+            Column(obs[self.seeingEffCol], name=self.seeingEffCol))
+        table_lc.add_column(
+            Column(obs[self.seeingGeomCol], name=self.seeingGeomCol))
         table_lc.add_column(Column(e_per_sec[:, 1], name='flux_e'))
         table_lc.add_column(Column(mag_SN, name='mag'))
         table_lc.add_column(Column(exptime, name='exptime'))
