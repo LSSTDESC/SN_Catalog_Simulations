@@ -43,7 +43,7 @@ class SN_Simulation:
                  save_status, outdir, prodid,
                  simu_config, display_lc, time_display, area,
                  mjdCol='mjd', RaCol='pixRa', DecCol='pixDec',
-                 filterCol='band', exptimeCol='exptime',
+                 filterCol='band', exptimeCol='exptime',nexpCol='numExposures',
                  m5Col='fiveSigmaDepth', seasonCol='season',
                  seeingEffCol='seeingFwhmEff', seeingGeomCol='seeingFwhmGeom',
                  nproc=1):
@@ -60,6 +60,7 @@ class SN_Simulation:
         self.DecCol = DecCol
         self.filterCol = filterCol
         self.exptimeCol = exptimeCol
+        self.nexpCol = nexpCol
         self.m5Col = m5Col
         self.seasonCol = seasonCol
         self.seeingEffCol = seeingEffCol

@@ -33,6 +33,7 @@ class SN(SN_Object):
                          param.cosmology, param.telescope, param.SNID, param.area,
                          mjdCol=param.mjdCol, RaCol=param.RaCol, DecCol=param.DecCol,
                          filterCol=param.filterCol, exptimeCol=param.exptimeCol,
+                         nexpCol=param.nexpCol,
                          m5Col=param.m5Col, seasonCol=param.seasonCol,
                          seeingEffCol=param.seeingEffCol, seeingGeomCol=param.seeingGeomCol)
 
@@ -168,8 +169,8 @@ class SN(SN_Object):
         obs = obs[idx]
         nvals = range(len(obs))
 
-        photParams = [PhotometricParameters(
-            nexp=obs[self.exptimeCol][i]/15.) for i in nvals]
+        photParams = [PhotometricParameters(exptime=obs[self.exptimeCol][i]/obs[self.nexpCol][i],
+            nexp=obs[self.nexpCol][i]) for i in nvals]
         mag_SN = -2.5 * np.log10(fluxes / 3631.0)  # fluxes are in Jy
         #print('mags',mag_SN,photParams, obs[self.m5Col])
         calc = [SignalToNoise.calcSNR_m5(

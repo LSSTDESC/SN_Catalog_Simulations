@@ -16,7 +16,7 @@ class SN_Object:
     def __init__(self, name, sn_parameters, gen_parameters, cosmology,
                  Telescope, snid, area,
                  mjdCol='mjd', RaCol='pixRa', DecCol='pixDec',
-                 filterCol='band', exptimeCol='exptime',
+                 filterCol='band', exptimeCol='exptime',nexpCol='numExposures',
                  m5Col='fiveSigmaDepth', seasonCol='season',
                  seeingEffCol='seeingFwhmEff', seeingGeomCol='seeingFwhmGeom'):
 
@@ -32,6 +32,7 @@ class SN_Object:
         self.DecCol = DecCol
         self.filterCol = filterCol
         self.exptimeCol = exptimeCol
+        self.nexpCol = nexpCol
         self.m5Col = m5Col
         self.seasonCol = seasonCol
         self.seeingEffCol = seeingEffCol
